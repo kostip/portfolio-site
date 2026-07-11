@@ -1,0 +1,117 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+
+const { project } = Astro.props;
+---
+
+<BaseLayout title={`${project.data.title} — Константин Вершигора`} description={project.data.description}>
+  <main class="project-page">
+    <header class="project-header text-column">
+      <a class="back-link" href="/">← Все проекты</a>
+      <p class="eyebrow">Кейс · {project.data.year}</p>
+      <h1>{project.data.title}</h1>
+      <p class="project-intro">{project.data.description}</p>
+      <dl>
+        <div>
+          <dt>Роль</dt>
+          <dd>{project.data.role}</dd>
+        </div>
+        <div>
+          <dt>Год</dt>
+          <dd>{project.data.year}</dd>
+        </div>
+      </dl>
+    </header>
+
+    <div class="hero-placeholder wide-column" aria-label="Место для главного изображения проекта">
+      <span>Главное изображение проекта</span>
+    </div>
+
+    <article class="article-content text-column">
+      <slot />
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .project-page {
+    padding-bottom: clamp(5rem, 10vw, 9rem);
+  }
+
+  .project-header {
+    padding-block: clamp(4rem, 9vw, 7rem) clamp(3rem, 7vw, 5rem);
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 3rem;
+    color: var(--color-muted);
+    font-size: 0.95rem;
+    text-decoration: none;
+  }
+
+  .back-link:hover,
+  .back-link:focus-visible {
+    color: var(--color-text);
+  }
+
+  h1 {
+    margin: 0.5rem 0 1.5rem;
+    font-size: clamp(2.7rem, 7vw, 5.5rem);
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+  }
+
+  .project-intro {
+    max-width: 38rem;
+    margin: 0;
+    color: var(--color-muted);
+    font-size: clamp(1.15rem, 2.3vw, 1.45rem);
+    line-height: 1.55;
+  }
+
+  dl {
+    display: flex;
+    gap: 3rem;
+    margin: 3rem 0 0;
+  }
+
+  dt {
+    margin-bottom: 0.3rem;
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  .hero-placeholder {
+    display: grid;
+    min-height: clamp(20rem, 58vw, 40rem);
+    place-items: center;
+    background: var(--color-placeholder);
+    color: var(--color-muted);
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .article-content {
+    padding-top: clamp(4rem, 9vw, 7rem);
+  }
+
+  @media (max-width: 480px) {
+    dl {
+      gap: 1.5rem;
+      justify-content: space-between;
+    }
+  }
+</style>

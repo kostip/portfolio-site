@@ -1,17 +1,81 @@
 ---
+import { getCollection } from 'astro:content';
+import ProjectCard from '../components/ProjectCard.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 
+const projects = (await getCollection('projects')).sort(
+  (a, b) => a.data.order - b.data.order,
+);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout
+  title="Константин Вершигора — продуктовый дизайнер"
+  description="Портфолио продуктового дизайнера: интерфейсы для сложных сервисов и цифровых продуктов."
+>
+  <main>
+    <section class="hero text-column" aria-labelledby="hero-title">
+      <p class="eyebrow">Продуктовый дизайнер</p>
+      <h1 id="hero-title">Проектирую понятные интерфейсы для сложных цифровых продуктов.</h1>
+      <p class="lead">
+        Это технический каркас будущего портфолио. Настоящие тексты и проекты будут добавлены позже.
+      </p>
+    </section>
+
+    <section class="projects-section wide-column" aria-labelledby="projects-title">
+      <div class="section-heading">
+        <p class="eyebrow">Избранные работы</p>
+        <h2 id="projects-title">Проекты</h2>
+      </div>
+
+      <div class="project-grid">
+        {projects.map((project) => <ProjectCard project={project} />)}
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: clamp(5rem, 12vw, 9rem) clamp(5rem, 10vw, 8rem);
+  }
+
+  .hero h1 {
+    margin: 0.35rem 0 1.5rem;
+    font-size: clamp(2.6rem, 7vw, 5.4rem);
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+  }
+
+  .lead {
+    max-width: 38rem;
+    margin: 0;
+    color: var(--color-muted);
+    font-size: clamp(1.15rem, 2.2vw, 1.4rem);
+    line-height: 1.55;
+  }
+
+  .projects-section {
+    padding-bottom: clamp(5rem, 10vw, 9rem);
+  }
+
+  .section-heading {
+    margin-bottom: 2rem;
+  }
+
+  .section-heading h2 {
+    margin: 0.25rem 0 0;
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 700px) {
+    .project-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

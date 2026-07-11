@@ -79,7 +79,7 @@ const metadata = detailedMetadata.length > 1
   }
 
   .project-header {
-    padding-block: 40px var(--space-5);
+    padding-block: 40px;
   }
 
   .back-link {
@@ -124,14 +124,15 @@ const metadata = detailedMetadata.length > 1
   .project-metadata {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3) 30px;
-    margin: var(--space-4) 0 0;
+    gap: var(--space-3) 40px;
+    margin: 40px 0 0;
   }
 
   .metadata-item {
     width: max-content;
     max-width: 100%;
     flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   dt {
@@ -204,7 +205,7 @@ const metadata = detailedMetadata.length > 1
 
   @media (max-width: 640px) {
     .project-header {
-      padding-block: 27px var(--space-4);
+      padding-block: 27px 32px;
     }
 
     .back-link {
@@ -212,28 +213,34 @@ const metadata = detailedMetadata.length > 1
     }
 
     .project-title {
-      display: flex;
-      align-items: flex-start;
-      gap: var(--space-2);
+      display: block;
+      margin-top: 24px;
     }
 
     .project-title-icon {
       position: static;
-      width: 32px;
-      height: 32px;
-      flex: 0 0 32px;
-      margin-top: 0.2rem;
+      width: 36px;
+      height: 36px;
+      margin: 0 0 16px;
+      object-fit: contain;
+    }
+
+    .project-title h1 {
+      width: 100%;
     }
 
     .project-metadata--detailed {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--space-3) var(--space-4);
+      column-gap: 24px;
+      row-gap: 32px;
+      margin-top: 32px;
     }
 
     .project-metadata--detailed .metadata-item {
       width: auto;
       min-width: 0;
+      white-space: normal;
     }
 
     .project-cover {

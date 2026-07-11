@@ -1,13 +1,33 @@
 :root {
-  --color-background: #fafaf8;
+  --color-background: #ffffff;
   --color-surface: #ffffff;
   --color-text: #181817;
-  --color-muted: #686864;
+  --color-muted: #666662;
   --color-line: #deded9;
-  --color-placeholder: #eeeee9;
-  --page-padding: clamp(1.25rem, 4vw, 3rem);
-  --text-width: 43.75rem;
-  --wide-width: 62.5rem;
+  --color-placeholder: #f2f2ef;
+  --color-pain: #fff1ef;
+  --color-hypothesis: #eef8f1;
+
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 42px;
+  --space-7: 64px;
+  --space-8: 96px;
+
+  --page-padding: 32px;
+  --prose-width: 640px;
+  --wide-width: 840px;
+
+  --font-body: 16px;
+  --font-small: 14px;
+  --font-h1: 48px;
+  --font-h2: 42px;
+  --font-h3: 32px;
+  --font-h4: 24px;
+
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--color-text);
   background: var(--color-background);
@@ -20,16 +40,18 @@
 }
 
 html {
+  width: 100%;
   scroll-behavior: smooth;
 }
 
 body {
-  min-width: 20rem;
+  width: 100%;
   margin: 0;
+  overflow-x: clip;
   background: var(--color-background);
   color: var(--color-text);
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: var(--font-body);
+  line-height: 1.4;
 }
 
 main {
@@ -48,7 +70,8 @@ svg {
 
 h1,
 h2,
-h3 {
+h3,
+h4 {
   font-weight: 650;
   text-wrap: balance;
 }
@@ -57,55 +80,110 @@ p {
   text-wrap: pretty;
 }
 
-.text-column,
-.wide-column {
-  width: calc(100% - (2 * var(--page-padding)));
+.prose,
+.text-column {
+  width: min(calc(100% - (2 * var(--page-padding))), var(--prose-width));
   margin-inline: auto;
 }
 
-.text-column {
-  max-width: var(--text-width);
+.wide,
+.wide-column,
+.two-column {
+  width: min(calc(100% - (2 * var(--page-padding))), var(--wide-width));
+  margin-inline: auto;
 }
 
-.wide-column {
-  max-width: var(--wide-width);
+.two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.two-column > * {
+  min-width: 0;
 }
 
 .eyebrow {
   margin: 0;
   color: var(--color-muted);
-  font-size: 0.8rem;
+  font-size: var(--font-small);
   font-weight: 650;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
   text-transform: uppercase;
 }
 
 .article-content {
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
-  font-size: clamp(1.08rem, 1.8vw, 1.2rem);
-  line-height: 1.75;
+  width: 100%;
+  background: var(--color-surface);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: var(--font-body);
+  line-height: 1.4;
+}
+
+.article-content > :where(p, h1, h2, h3, h4, ul, ol, blockquote),
+.article-content > .prose,
+.project-divider {
+  width: min(calc(100% - (2 * var(--page-padding))), var(--prose-width));
+  margin-inline: auto;
+}
+
+.article-content > :where(.wide, .two-column, .table-scroll),
+.article-content > p:has(> img) {
+  width: min(calc(100% - (2 * var(--page-padding))), var(--wide-width));
+  max-width: none;
+  margin-inline: auto;
+}
+
+.article-content h1 {
+  margin-top: 62px;
+  margin-bottom: var(--space-3);
+  font-size: var(--font-h1);
+  letter-spacing: -0.045em;
+  line-height: 1.02;
 }
 
 .article-content h2 {
-  margin: 3.5rem 0 1rem;
-  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin-top: 62px;
+  margin-bottom: var(--space-3);
+  font-size: var(--font-h2);
   letter-spacing: -0.035em;
-  line-height: 1.15;
+  line-height: 1.08;
 }
 
-.article-content h2:first-child {
+.article-content h3 {
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-h3);
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+}
+
+.article-content h4 {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-h4);
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+}
+
+.article-content p {
   margin-top: 0;
+  margin-bottom: var(--space-3);
 }
 
-.article-content p,
-.article-content ul,
-.article-content ol {
-  margin-block: 0 1.4em;
+.article-content :where(ul, ol) {
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  padding-left: 1.25rem;
 }
 
 .article-content li + li {
-  margin-top: 0.45em;
+  margin-top: 7px;
+}
+
+.article-content strong {
+  font-weight: 650;
 }
 
 .article-content a {
@@ -113,12 +191,136 @@ p {
   text-underline-offset: 0.2em;
 }
 
+.article-content > p:has(> img) {
+  margin-top: 18px;
+  margin-bottom: var(--space-4);
+}
+
+.project-image,
+.article-content > p > img {
+  display: block;
+  width: 100%;
+  max-width: var(--wide-width);
+  height: auto;
+  margin-inline: auto;
+}
+
+.article-content > .project-image {
+  margin-top: 18px;
+  margin-bottom: var(--space-4);
+}
+
+.project-divider,
+.article-content > hr {
+  width: min(calc(100% - (2 * var(--page-padding))), var(--prose-width));
+  height: 62px;
+  margin: 0 auto;
+  border: 0;
+}
+
+.article-content > :has(+ hr),
+.article-content > :has(+ .project-divider) {
+  margin-bottom: 0;
+}
+
+.article-content > hr + :is(h1, h2, h3, h4),
+.article-content > .project-divider + :is(h1, h2, h3, h4) {
+  margin-top: 0;
+}
+
+.article-content h1 + h2 {
+  margin-top: var(--space-4);
+}
+
+.two-column h2,
+.two-column h3,
+.two-column h4 {
+  margin-top: 0;
+  margin-bottom: var(--space-3);
+}
+
+.two-column p:last-child,
+.two-column ul:last-child {
+  margin-bottom: 0;
+}
+
+.manual-columns {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  align-items: start;
+}
+
+.manual-columns .project-image {
+  width: 100%;
+}
+
+.table-scroll {
+  width: auto;
+  max-width: none;
+  margin-top: 18px;
+  margin-right: var(--page-padding);
+  margin-bottom: 0;
+  margin-left: max(var(--page-padding), calc((100vw - var(--wide-width)) / 2));
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll table {
+  width: max-content;
+  max-width: none;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: var(--font-small);
+  line-height: 1.4;
+}
+
+.table-scroll th,
+.table-scroll td {
+  min-width: 150px;
+  max-width: 260px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-line);
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+}
+
+.table-scroll th {
+  background: var(--color-placeholder);
+  font-weight: 650;
+}
+
+.table-scroll .job-stories td:nth-child(4) {
+  background: var(--color-pain);
+}
+
+.table-scroll .job-stories td:nth-child(5) {
+  background: var(--color-hypothesis);
+}
+
+.table-scroll .job-stories :is(th, td):nth-child(1) {
+  max-width: 190px;
+}
+
+.table-scroll .job-stories :is(th, td):nth-child(2),
+.table-scroll .job-stories :is(th, td):nth-child(3) {
+  max-width: 170px;
+}
+
+.table-scroll .job-stories :is(th, td):nth-child(4) {
+  max-width: 210px;
+}
+
+.table-scroll .job-stories :is(th, td):nth-child(5) {
+  max-width: 250px;
+}
+
 .skip-link {
   position: fixed;
   z-index: 10;
-  top: 0.75rem;
-  left: 0.75rem;
-  padding: 0.6rem 0.9rem;
+  top: var(--space-2);
+  left: var(--space-2);
+  padding: var(--space-1) var(--space-2);
   transform: translateY(-160%);
   background: var(--color-text);
   color: var(--color-surface);
@@ -131,6 +333,52 @@ p {
 :focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 4px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --page-padding: 20px;
+    --font-h1: 36px;
+    --font-h2: 30px;
+    --font-h3: 26px;
+    --font-h4: 21px;
+    --space-8: 64px;
+  }
+
+  .two-column {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .manual-columns {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+
+  .article-content h1,
+  .article-content h2 {
+    margin-top: 42px;
+  }
+
+  .article-content h3 {
+    margin-top: var(--space-4);
+  }
+
+  .article-content > p:has(> img),
+  .article-content > .project-image {
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  .project-divider,
+  .article-content > hr {
+    height: 42px;
+  }
+
+  .table-scroll th,
+  .table-scroll td {
+    min-width: 160px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -7,51 +7,86 @@ interface Props {
 }
 
 const { project } = Astro.props;
+const detailedMetadata = [
+  { label: 'Роль', value: project.data.role },
+  { label: 'Срок', value: project.data.duration },
+  { label: 'Команда', value: project.data.team },
+  { label: 'Продукт', value: project.data.product },
+].filter((item) => item.value);
+
+const metadata = detailedMetadata.length > 1
+  ? detailedMetadata
+  : [
+      { label: 'Роль', value: project.data.role },
+      { label: 'Год', value: project.data.year },
+    ].filter((item) => item.value);
 ---
 
 <BaseLayout title={`${project.data.title} — Константин Вершигора`} description={project.data.description}>
   <main class="project-page">
-    <header class="project-header text-column">
+    <header class="project-header prose">
       <a class="back-link" href="/">← Все проекты</a>
-      <p class="eyebrow">Кейс · {project.data.year}</p>
-      <h1>{project.data.title}</h1>
-      <p class="project-intro">{project.data.description}</p>
-      <dl>
-        <div>
-          <dt>Роль</dt>
-          <dd>{project.data.role}</dd>
-        </div>
-        <div>
-          <dt>Год</dt>
-          <dd>{project.data.year}</dd>
-        </div>
+      <p class="eyebrow">Кейс{project.data.year && ` · ${project.data.year}`}</p>
+      <div class="project-title">
+        {
+          project.data.titleIcon && (
+            <img
+              class="project-title-icon"
+              src={project.data.titleIcon}
+              alt={project.data.titleIconAlt ?? ''}
+              width="48"
+              height="48"
+            />
+          )
+        }
+        <h1>{project.data.title}</h1>
+      </div>
+      <dl class:list={['project-metadata', { 'project-metadata--detailed': detailedMetadata.length > 1 }]}>
+        {metadata.map((item) => (
+          <div class="metadata-item">
+            <dt>{item.label}</dt>
+            <dd>{item.value}</dd>
+          </div>
+        ))}
       </dl>
     </header>
 
-    <div class="hero-placeholder wide-column" aria-label="Место для главного изображения проекта">
-      <span>Главное изображение проекта</span>
-    </div>
+    {
+      project.data.cover ? (
+        <div class="project-cover wide">
+          <img src={project.data.cover} alt={project.data.coverAlt ?? ''} />
+        </div>
+      ) : (
+        <div class="hero-placeholder wide" aria-label="Место для главного изображения проекта">
+          <span>Главное изображение проекта</span>
+        </div>
+      )
+    }
 
-    <article class="article-content text-column">
+    <article class="article-content">
       <slot />
     </article>
+
+    <div class="project-footer prose">
+      <a class="home-link" href="/">← Вернуться на главную</a>
+    </div>
   </main>
 </BaseLayout>
 
 <style>
   .project-page {
-    padding-bottom: clamp(5rem, 10vw, 9rem);
+    padding-bottom: var(--space-8);
   }
 
   .project-header {
-    padding-block: clamp(4rem, 9vw, 7rem) clamp(3rem, 7vw, 5rem);
+    padding-block: 40px var(--space-5);
   }
 
   .back-link {
     display: inline-block;
-    margin-bottom: 3rem;
+    margin-bottom: 40px;
     color: var(--color-muted);
-    font-size: 0.95rem;
+    font-size: var(--font-small);
     text-decoration: none;
   }
 
@@ -60,37 +95,57 @@ const { project } = Astro.props;
     color: var(--color-text);
   }
 
+  .project-title {
+    position: relative;
+    margin-top: var(--space-2);
+  }
+
+  .project-title-icon {
+    --icon-gap: 20px;
+    --icon-size: calc((var(--wide-width) - var(--prose-width)) / 2 - var(--icon-gap));
+    position: absolute;
+    top: 0;
+    left: calc((var(--prose-width) - var(--wide-width)) / 2);
+    width: var(--icon-size);
+    height: var(--icon-size);
+    object-fit: contain;
+  }
+
   h1 {
-    margin: 0.5rem 0 1.5rem;
-    font-size: clamp(2.7rem, 7vw, 5.5rem);
-    letter-spacing: -0.055em;
-    line-height: 0.98;
-  }
-
-  .project-intro {
-    max-width: 38rem;
+    min-width: 0;
     margin: 0;
-    color: var(--color-muted);
-    font-size: clamp(1.15rem, 2.3vw, 1.45rem);
-    line-height: 1.55;
+    overflow-wrap: anywhere;
+    font-size: var(--font-h1);
+    letter-spacing: -0.045em;
+    line-height: 1.02;
+    text-wrap: balance;
   }
 
-  dl {
+  .project-metadata {
     display: flex;
-    gap: 3rem;
-    margin: 3rem 0 0;
+    flex-wrap: wrap;
+    gap: var(--space-3) 30px;
+    margin: var(--space-4) 0 0;
+  }
+
+  .metadata-item {
+    width: max-content;
+    max-width: 100%;
+    flex: 0 0 auto;
   }
 
   dt {
-    margin-bottom: 0.3rem;
+    margin-bottom: var(--space-1);
     color: var(--color-muted);
-    font-size: 0.8rem;
+    font-size: var(--font-small);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
   dd {
     margin: 0;
+    font-size: var(--font-body);
+    line-height: 1.4;
   }
 
   .hero-placeholder {
@@ -104,14 +159,89 @@ const { project } = Astro.props;
     text-transform: uppercase;
   }
 
-  .article-content {
-    padding-top: clamp(4rem, 9vw, 7rem);
+  .project-cover {
+    overflow: hidden;
+    border-radius: 18px;
+    background: var(--color-surface);
   }
 
-  @media (max-width: 480px) {
-    dl {
-      gap: 1.5rem;
-      justify-content: space-between;
+  .project-cover img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .article-content {
+    padding-top: var(--space-4);
+    background: var(--color-surface);
+  }
+
+  @media (max-width: 904px) {
+    .project-title {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+    }
+
+    .project-title-icon {
+      position: static;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+      margin-top: 0.2rem;
+    }
+  }
+
+  .project-footer {
+    padding-top: var(--space-7);
+  }
+
+  .home-link {
+    font-size: var(--font-small);
+    text-underline-offset: 0.2em;
+  }
+
+  @media (max-width: 640px) {
+    .project-header {
+      padding-block: 27px var(--space-4);
+    }
+
+    .back-link {
+      margin-bottom: 27px;
+    }
+
+    .project-title {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+    }
+
+    .project-title-icon {
+      position: static;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      margin-top: 0.2rem;
+    }
+
+    .project-metadata--detailed {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3) var(--space-4);
+    }
+
+    .project-metadata--detailed .metadata-item {
+      width: auto;
+      min-width: 0;
+    }
+
+    .project-cover {
+      border-radius: 12px;
+    }
+
+    .article-content {
+      padding-top: var(--space-3);
     }
   }
 </style>

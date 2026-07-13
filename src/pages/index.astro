@@ -4,7 +4,7 @@ import ProjectCard from '../components/ProjectCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const projects = (await getCollection('projects')).sort(
-  (a, b) => a.data.order - b.data.order,
+  (a, b) => (a.data.order ?? Number.MAX_SAFE_INTEGER) - (b.data.order ?? Number.MAX_SAFE_INTEGER),
 );
 ---
 

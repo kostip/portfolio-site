@@ -1,0 +1,41 @@
+---
+import UiButton from './UiButton.astro';
+
+interface Props {
+  nextHref: string;
+}
+
+const { nextHref } = Astro.props;
+---
+
+<nav class="project-navigation wide-column" aria-label="Навигация между проектами">
+  <UiButton
+    href="/"
+    label="Вернуться на главную"
+    mobileLabel="На главную"
+    icon="left"
+  />
+  <UiButton
+    href={nextHref}
+    label="Следующий кейс"
+    mobileLabel="Далее"
+    variant="gradient"
+    icon="right"
+  />
+</nav>
+
+<style>
+  .project-navigation {
+    display: flex;
+    padding-top: var(--space-7);
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  @media (max-width: 839px) {
+    .project-navigation {
+      gap: 12px;
+    }
+  }
+</style>

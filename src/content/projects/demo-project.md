@@ -4,7 +4,6 @@ description: Временный пример, который проверяет 
 year: '2026'
 role: UX/UI Design
 featured: true
-order: 1
 ---
 
 ## Задача

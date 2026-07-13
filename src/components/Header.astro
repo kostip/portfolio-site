@@ -1,56 +1,266 @@
+---
+import ContactDropdown from './ContactDropdown.astro';
+import UiButton from './UiButton.astro';
+---
+
 <header class="site-header">
-  <div class="header-inner wide-column">
-    <a class="site-name" href="/" aria-label="На главную">Константин Вершигора</a>
-    <nav aria-label="Основная навигация">
-      <a href="/#projects-title">Проекты</a>
-      <a href="mailto:versh.konstantin@gmail.com">Связаться</a>
+  <div class="header-inner">
+    <a class="logo-author" href="/" aria-label="Константин Вершигора — на главную">
+      <img
+        class="logo-author__avatar"
+        src="/images/common/avatar.webp"
+        width="54"
+        height="54"
+        alt=""
+      />
+      <span class="logo-author__name">Константин Вершигора</span>
+    </a>
+
+    <nav class="header-navigation" aria-label="Основная навигация">
+      <UiButton class="header-button header-button--projects" href="/" label="Проекты" />
+      <div class="contact-area">
+        <UiButton
+          class="header-button header-button--contact"
+          label="Связаться"
+          variant="gradient"
+          aria-label="Открыть меню контактов"
+          aria-expanded="false"
+          aria-controls="contact-dropdown"
+          data-contact-toggle
+        />
+        <ContactDropdown />
+      </div>
     </nav>
   </div>
 </header>
 
+<script>
+  const mobileQuery = window.matchMedia('(max-width: 839px)');
+
+  document.querySelectorAll<HTMLElement>('.contact-area').forEach((area) => {
+    const toggle = area.querySelector<HTMLButtonElement>('[data-contact-toggle]');
+    if (!toggle) return;
+
+    const setOpen = (open: boolean) => {
+      area.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+    };
+
+    const close = (force = false) => {
+      setOpen(false);
+      area.classList.toggle('is-force-closed', force);
+    };
+
+    toggle.addEventListener('click', () => {
+      if (!mobileQuery.matches) return;
+      area.classList.remove('is-force-closed');
+      setOpen(!area.classList.contains('is-open'));
+    });
+
+    area.addEventListener('pointerenter', () => {
+      if (mobileQuery.matches) return;
+      area.classList.remove('is-force-closed');
+      setOpen(true);
+    });
+
+    area.addEventListener('pointerleave', () => {
+      if (mobileQuery.matches) return;
+      close();
+    });
+
+    area.addEventListener('focusin', () => {
+      if (mobileQuery.matches) return;
+      area.classList.remove('is-force-closed');
+      setOpen(true);
+    });
+
+    area.addEventListener('focusout', () => {
+      if (mobileQuery.matches) return;
+      requestAnimationFrame(() => {
+        if (!area.contains(document.activeElement)) close();
+      });
+    });
+
+    document.addEventListener('pointerdown', (event) => {
+      if (mobileQuery.matches && !area.contains(event.target as Node)) close();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !area.classList.contains('is-open')) return;
+      toggle.focus();
+      close(!mobileQuery.matches);
+    });
+
+    mobileQuery.addEventListener('change', () => close());
+  });
+</script>
+
 <style>
   .site-header {
-    border-bottom: 1px solid var(--color-line);
+    position: relative;
+    z-index: 10;
+    height: 74px;
+    border-bottom: 1px solid var(--color-navigation-stroke);
+    background: var(--color-white);
   }
 
   .header-inner {
     display: flex;
-    min-height: 4.5rem;
+    width: min(100%, 840px);
+    height: 73px;
+    margin-inline: auto;
+    padding: 10px 0;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
   }
 
-  .site-name {
-    color: var(--color-text);
-    font-weight: 650;
-    letter-spacing: -0.02em;
-    text-decoration: none;
-  }
-
-  nav {
+  .logo-author {
     display: flex;
-    gap: clamp(1rem, 4vw, 2rem);
-  }
-
-  nav a {
-    color: var(--color-muted);
-    font-size: 0.95rem;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+    color: var(--color-black-text);
     text-decoration: none;
   }
 
-  nav a:hover,
-  nav a:focus-visible {
-    color: var(--color-text);
+  .logo-author__avatar {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    border-radius: 12px;
+    object-fit: cover;
   }
 
-  @media (max-width: 480px) {
-    .header-inner {
-      min-height: 4rem;
+  .logo-author__name {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: normal;
+    white-space: nowrap;
+  }
+
+  .header-navigation {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .contact-area {
+    position: relative;
+  }
+
+  .contact-area::after {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 100%;
+    height: 10px;
+    content: '';
+  }
+
+  :global(.ui-button.header-button) {
+    height: 54px;
+    padding-inline: 24px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  :global(.header-button--projects) {
+    width: 140px;
+  }
+
+  :global(.header-button--contact) {
+    width: 160px;
+  }
+
+  :global(.contact-area .contact-dropdown) {
+    top: calc(100% + 10px);
+  }
+
+  @media (max-width: 839px) {
+    .site-header {
+      height: 63px;
     }
 
-    nav a:first-child {
-      display: none;
+    .header-inner {
+      width: 100%;
+      height: 62px;
+      padding: 10px;
+    }
+
+    .logo-author {
+      gap: 8px;
+    }
+
+    .logo-author__avatar {
+      width: 42px;
+      height: 42px;
+      flex-basis: 42px;
+      border-radius: 8px;
+    }
+
+    .logo-author__name {
+      width: 82px;
+      font-size: 13px;
+      line-height: normal;
+      white-space: normal;
+    }
+
+    .header-navigation {
+      gap: 8px;
+    }
+
+    :global(.ui-button.header-button) {
+      width: auto;
+      height: 42px;
+      padding-inline: 16px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+  }
+
+  @media (max-width: 340px) {
+    .site-header {
+      height: 57px;
+    }
+
+    .header-inner {
+      height: 56px;
+    }
+
+    .logo-author {
+      gap: 6px;
+    }
+
+    .logo-author__avatar {
+      width: 36px;
+      height: 36px;
+      flex-basis: 36px;
+    }
+
+    .logo-author__name {
+      width: 62px;
+      font-size: 11px;
+      letter-spacing: -0.1px;
+    }
+
+    .header-navigation {
+      gap: 6px;
+    }
+
+    :global(.ui-button.header-button) {
+      height: 36px;
+      padding-inline: 8px;
+      font-size: 11px;
+    }
+  }
+
+  @media (min-width: 341px) and (max-width: 380px) {
+    .header-navigation {
+      gap: 6px;
+    }
+
+    :global(.ui-button.header-button) {
+      padding-inline: 14px;
     }
   }
 </style>

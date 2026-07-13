@@ -17,7 +17,7 @@ const projects = defineCollection({
     titleIcon: z.string().optional(),
     titleIconAlt: z.string().optional(),
     featured: z.boolean().default(false),
-    order: z.number().int().nonnegative().default(0),
+    order: z.number().int().positive().optional(),
   }),
 });
 

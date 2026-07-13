@@ -1,12 +1,15 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import ProjectNavigation from '../components/ProjectNavigation.astro';
+import UiButton from '../components/UiButton.astro';
 import BaseLayout from './BaseLayout.astro';
 
 interface Props {
   project: CollectionEntry<'projects'>;
+  nextProject: CollectionEntry<'projects'>;
 }
 
-const { project } = Astro.props;
+const { project, nextProject } = Astro.props;
 const detailedMetadata = [
   { label: 'Роль', value: project.data.role },
   { label: 'Срок', value: project.data.duration },
@@ -25,7 +28,9 @@ const metadata = detailedMetadata.length > 1
 <BaseLayout title={`${project.data.title} — Константин Вершигора`} description={project.data.description}>
   <main class="project-page">
     <header class="project-header prose">
-      <a class="back-link" href="/">← Все проекты</a>
+      <div class="project-back-navigation">
+        <UiButton class="back-link" href="/" label="Все проекты" icon="left" />
+      </div>
       <p class="eyebrow">Кейс{project.data.year && ` · ${project.data.year}`}</p>
       <div class="project-title">
         {
@@ -67,9 +72,7 @@ const metadata = detailedMetadata.length > 1
       <slot />
     </article>
 
-    <div class="project-footer prose">
-      <a class="home-link" href="/">← Вернуться на главную</a>
-    </div>
+    <ProjectNavigation nextHref={`/projects/${nextProject.id}/`} />
   </main>
 </BaseLayout>
 
@@ -79,20 +82,14 @@ const metadata = detailedMetadata.length > 1
   }
 
   .project-header {
-    padding-block: 40px;
+    padding-block: 0 40px;
   }
 
-  .back-link {
-    display: inline-block;
-    margin-bottom: 40px;
-    color: var(--color-muted);
-    font-size: var(--font-small);
-    text-decoration: none;
-  }
-
-  .back-link:hover,
-  .back-link:focus-visible {
-    color: var(--color-text);
+  .project-back-navigation {
+    display: flex;
+    height: 128px;
+    align-items: center;
+    justify-content: flex-start;
   }
 
   .project-title {
@@ -178,6 +175,12 @@ const metadata = detailedMetadata.length > 1
     background: var(--color-surface);
   }
 
+  @media (max-width: 839px) {
+    .project-back-navigation {
+      height: 122px;
+    }
+  }
+
   @media (max-width: 904px) {
     .project-title {
       display: flex;
@@ -194,22 +197,13 @@ const metadata = detailedMetadata.length > 1
     }
   }
 
-  .project-footer {
-    padding-top: var(--space-7);
-  }
-
-  .home-link {
-    font-size: var(--font-small);
-    text-underline-offset: 0.2em;
-  }
-
   @media (max-width: 640px) {
     .project-header {
-      padding-block: 27px 32px;
+      padding-block: 0 32px;
     }
 
-    .back-link {
-      margin-bottom: 27px;
+    .project-back-navigation {
+      height: 96px;
     }
 
     .project-title {

@@ -1,0 +1,61 @@
+---
+interface Props {
+  href?: string;
+  label: string;
+  mobileLabel?: string;
+  variant?: 'gray' | 'gradient';
+  icon?: 'left' | 'right';
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  href,
+  label,
+  mobileLabel,
+  variant = 'gray',
+  icon,
+  class: className,
+  ...attributes
+} = Astro.props;
+
+const classes = [
+  'ui-button',
+  `ui-button--${variant}`,
+  icon && `ui-button--icon-${icon}`,
+  className,
+].filter(Boolean);
+const Tag = href ? 'a' : 'button';
+---
+
+<Tag class:list={classes} href={href} type={href ? undefined : 'button'} {...attributes}>
+  {icon === 'left' ? (
+    <span class="ui-button__back-content">
+      <img
+        class="ui-button__icon"
+        src="/icons/arrow-left-icon.svg"
+        width="20"
+        height="20"
+        alt=""
+        aria-hidden="true"
+      />
+      <span class:list={['ui-button__label', { 'ui-button__label--desktop': mobileLabel }]}>{label}</span>
+      {mobileLabel && <span class="ui-button__label ui-button__label--mobile">{mobileLabel}</span>}
+    </span>
+  ) : (
+    <>
+      {icon === 'right' && (
+        <img
+          class="ui-button__icon ui-button__icon--right"
+          src="/icons/arrow-left-icon.svg"
+          width="20"
+          height="20"
+          alt=""
+          aria-hidden="true"
+        />
+      )}
+      <span class:list={['ui-button__label', { 'ui-button__label--desktop': mobileLabel }]}>{label}</span>
+      {mobileLabel && <span class="ui-button__label ui-button__label--mobile">{mobileLabel}</span>}
+    </>
+  )}
+</Tag>

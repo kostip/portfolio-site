@@ -281,7 +281,7 @@ p {
   background: var(--color-surface);
   font-family: Manrope, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: var(--font-body);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .article-content > :where(p, h1, h2, h3, h4, ul, ol, blockquote),
@@ -400,6 +400,112 @@ p {
 .two-column h4 {
   margin-top: 0;
   margin-bottom: var(--space-3);
+}
+
+.two-column h2 {
+  font-size: var(--font-h3);
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+}
+
+.lead {
+  color: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.callout {
+  display: flex;
+  width: 100%;
+  max-width: 640px;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: var(--space-5);
+  padding: 12px 20px 20px;
+  border-radius: 12px;
+  background: #f4f3f6;
+  color: inherit;
+}
+
+.article-content > .callout {
+  width: calc(100% - (2 * var(--page-padding)));
+  margin-inline: auto;
+}
+
+.callout-header,
+.callout-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  gap: 12px;
+}
+
+.callout-header {
+  flex-direction: row;
+  align-items: center;
+}
+
+.callout-row {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.callout-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.callout .callout-title {
+  min-width: 0;
+  margin: 0;
+  font-size: var(--font-h4);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+}
+
+.callout .callout-title--medium {
+  font-size: var(--font-h3);
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+}
+
+.callout .callout-title--large {
+  font-size: var(--font-h2);
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+.callout-content {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-left: 32px;
+}
+
+.callout-content--inline {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding-left: 0;
+}
+
+.callout-content > :first-child,
+.callout-content--inline > :first-child {
+  margin-top: 0;
+}
+
+.callout-content > :last-child,
+.callout-content--inline > :last-child {
+  margin-bottom: 0;
 }
 
 .two-column p:last-child,

@@ -1,0 +1,129 @@
+---
+import UiButton from '../components/UiButton.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Страница не найдена — Константин Вершигора"
+  description="Запрошенная страница не найдена."
+  robots="noindex, follow"
+  bodyClass="error-page-body"
+  headerAutoHide={false}
+>
+  <main class="error-page">
+    <section class="error-content" aria-labelledby="error-title">
+      <h1 id="error-title" class="visually-hidden">Страница не найдена</h1>
+      <img
+        class="error-code"
+        src="/assets/404.svg"
+        width="362"
+        height="150"
+        alt=""
+        aria-hidden="true"
+      />
+      <p>Неправильно набран адрес, или такой страницы на сайте больше не существует</p>
+      <UiButton
+        class="error-page-button"
+        href="/"
+        label="Вернуться на главную"
+        variant="gradient"
+      />
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  :global(body.error-page-body) {
+    display: grid;
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: hidden;
+  }
+
+  :global(body.error-page-body > #main-content) {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .error-page {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 40px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .error-content {
+    display: flex;
+    width: 100%;
+    max-width: 640px;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    text-align: center;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    border: 0;
+    margin: -1px;
+    white-space: nowrap;
+  }
+
+  .error-code {
+    display: block;
+    width: min(362px, 100%);
+    height: auto;
+    flex: 0 0 auto;
+  }
+
+  .error-content p {
+    width: 100%;
+    max-width: 640px;
+    margin: 0;
+    color: var(--color-black-text);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .error-content :global(.ui-button.error-page-button) {
+    width: fit-content;
+    height: 54px;
+    padding-inline: 24px;
+    flex: 0 0 auto;
+    font-size: 16px;
+  }
+
+  @media (max-width: 640px) {
+    .error-page {
+      padding: 20px;
+    }
+
+    .error-content {
+      gap: 30px;
+    }
+
+    .error-code {
+      width: min(181px, 100%);
+    }
+  }
+
+  @media (max-height: 420px) {
+    .error-content {
+      gap: 12px;
+    }
+  }
+</style>

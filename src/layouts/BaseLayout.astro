@@ -9,12 +9,18 @@ interface Props {
   title: string;
   description?: string;
   favicon?: string;
+  robots?: string;
+  bodyClass?: string;
+  headerAutoHide?: boolean;
 }
 
 const {
   title,
   description = 'Портфолио продуктового дизайнера Константина Вершигоры.',
   favicon,
+  robots,
+  bodyClass,
+  headerAutoHide = true,
 } = Astro.props;
 
 const faviconTypes: Record<string, string> = {
@@ -42,6 +48,7 @@ const projectFavicon = faviconPath && faviconType && localFaviconExists
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    {robots && <meta name="robots" content={robots} />}
     {
       projectFavicon ? (
         <link rel="icon" type={projectFavicon.type} href={projectFavicon.href} />
@@ -55,9 +62,9 @@ const projectFavicon = faviconPath && faviconType && localFaviconExists
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>{title}</title>
   </head>
-  <body>
+  <body class={bodyClass}>
     <a class="skip-link" href="#main-content">Перейти к содержимому</a>
-    <Header />
+    <Header autoHide={headerAutoHide} />
     <div id="main-content">
       <slot />
     </div>

@@ -1,9 +1,15 @@
 ---
 import ContactDropdown from './ContactDropdown.astro';
 import UiButton from './UiButton.astro';
+
+interface Props {
+  autoHide?: boolean;
+}
+
+const { autoHide = true } = Astro.props;
 ---
 
-<header class="site-header">
+<header class="site-header" data-auto-hide={autoHide ? 'true' : 'false'}>
   <div class="header-inner">
     <a class="logo-author" href="/" aria-label="Константин Вершигора — на главную">
       <img
@@ -97,7 +103,7 @@ import UiButton from './UiButton.astro';
     mobileQuery.addEventListener('change', () => close());
   });
 
-  if (header && !header.dataset.autoHideInitialized) {
+  if (header?.dataset.autoHide !== 'false' && !header.dataset.autoHideInitialized) {
     const movementThreshold = 10;
     const safeTopZone = 90;
     const safeBottomZone = 100;

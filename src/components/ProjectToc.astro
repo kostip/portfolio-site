@@ -1,0 +1,422 @@
+<nav class="project-toc" aria-label="Содержание кейса" data-project-toc>
+  <button
+    class="project-toc__trigger"
+    type="button"
+    aria-label="Открыть содержание кейса"
+    aria-expanded="false"
+    aria-controls="project-toc-panel"
+    data-project-toc-trigger
+  >
+    <span class="project-toc__markers" aria-hidden="true" data-project-toc-markers></span>
+  </button>
+
+  <div
+    class="project-toc__panel"
+    id="project-toc-panel"
+    aria-hidden="true"
+    inert
+    data-project-toc-panel
+  >
+    <div class="project-toc__list" data-project-toc-list></div>
+  </div>
+</nav>
+
+<script>
+  const transliteration: Record<string, string> = {
+    а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z',
+    и: 'i', й: 'i', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r',
+    с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'sch',
+    ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+  };
+
+  const slugify = (value: string) => {
+    const transliterated = Array.from(value.toLocaleLowerCase('ru-RU'))
+      .map((character) => transliteration[character] ?? character)
+      .join('');
+
+    return transliterated
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  document.querySelectorAll<HTMLElement>('[data-project-toc]').forEach((toc) => {
+    const article = document.querySelector<HTMLElement>('.article-content');
+    const headings = article
+      ? Array.from(article.querySelectorAll<HTMLHeadingElement>('h2, h3, h4'))
+      : [];
+    const trigger = toc.querySelector<HTMLButtonElement>('[data-project-toc-trigger]');
+    const markers = toc.querySelector<HTMLElement>('[data-project-toc-markers]');
+    const panel = toc.querySelector<HTMLElement>('[data-project-toc-panel]');
+    const list = toc.querySelector<HTMLElement>('[data-project-toc-list]');
+
+    if (!headings.length || !trigger || !markers || !panel || !list) {
+      toc.hidden = true;
+      return;
+    }
+
+    const usedIds = new Set(
+      Array.from(document.querySelectorAll<HTMLElement>('[id]'))
+        .filter((element) => !headings.includes(element as HTMLHeadingElement))
+        .map((element) => element.id),
+    );
+    const markerElements: HTMLElement[] = [];
+    const linkElements: HTMLAnchorElement[] = [];
+
+    headings.forEach((heading, index) => {
+      const title = heading.textContent?.trim().replace(/\s+/g, ' ') || `Раздел ${index + 1}`;
+      const baseSlug = slugify(title) || `section-${index + 1}`;
+      let uniqueSlug = baseSlug;
+      let suffix = 2;
+      while (usedIds.has(uniqueSlug)) uniqueSlug = `${baseSlug}-${suffix++}`;
+      usedIds.add(uniqueSlug);
+      heading.id = uniqueSlug;
+
+      const level = heading.tagName.toLocaleLowerCase();
+      const marker = document.createElement('span');
+      marker.className = `project-toc__marker project-toc__marker--${level}`;
+      markers.append(marker);
+      markerElements.push(marker);
+
+      const link = document.createElement('a');
+      link.className = `project-toc__link project-toc__link--${level}`;
+      link.href = `#${heading.id}`;
+      link.textContent = title;
+      list.append(link);
+      linkElements.push(link);
+    });
+
+    let activeIndex = 0;
+    let openTimer: number | undefined;
+    let closeTimer: number | undefined;
+    let pointerInside = false;
+    let keyboardOpen = false;
+    let lastInput: 'keyboard' | 'pointer' = 'pointer';
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const setActive = (index: number) => {
+      activeIndex = Math.max(0, Math.min(index, headings.length - 1));
+      markerElements.forEach((marker, markerIndex) => {
+        marker.classList.toggle('is-active', markerIndex === activeIndex);
+      });
+      linkElements.forEach((link, linkIndex) => {
+        const isActive = linkIndex === activeIndex;
+        link.classList.toggle('is-active', isActive);
+        if (isActive) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    };
+
+    const clearTimers = () => {
+      window.clearTimeout(openTimer);
+      window.clearTimeout(closeTimer);
+    };
+
+    const setOpen = (open: boolean) => {
+      clearTimers();
+      toc.classList.toggle('is-open', open);
+      trigger.setAttribute('aria-expanded', String(open));
+      trigger.setAttribute('aria-label', open ? 'Закрыть содержание кейса' : 'Открыть содержание кейса');
+      panel.setAttribute('aria-hidden', String(!open));
+      panel.toggleAttribute('inert', !open);
+    };
+
+    const scheduleOpen = () => {
+      window.clearTimeout(closeTimer);
+      openTimer = window.setTimeout(() => setOpen(true), 100);
+    };
+
+    const scheduleClose = () => {
+      window.clearTimeout(openTimer);
+      closeTimer = window.setTimeout(() => {
+        if (pointerInside || keyboardOpen) return;
+        setOpen(false);
+      }, 220);
+    };
+
+    document.addEventListener('keydown', () => {
+      lastInput = 'keyboard';
+    }, { capture: true });
+
+    document.addEventListener('pointerdown', () => {
+      lastInput = 'pointer';
+    }, { capture: true });
+
+    toc.addEventListener('pointerenter', () => {
+      pointerInside = true;
+      scheduleOpen();
+    });
+    toc.addEventListener('pointerleave', () => {
+      pointerInside = false;
+      scheduleClose();
+    });
+    toc.addEventListener('pointerdown', () => {
+      keyboardOpen = false;
+    });
+    toc.addEventListener('focusin', () => {
+      if (lastInput !== 'keyboard') return;
+      keyboardOpen = true;
+      setOpen(true);
+    });
+    toc.addEventListener('focusout', () => {
+      requestAnimationFrame(() => {
+        if (toc.contains(document.activeElement)) return;
+        keyboardOpen = false;
+        scheduleClose();
+      });
+    });
+
+    trigger.addEventListener('click', () => {
+      if (lastInput === 'keyboard') {
+        keyboardOpen = true;
+        setOpen(true);
+        return;
+      }
+
+      setOpen(!toc.classList.contains('is-open'));
+    });
+
+    toc.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !toc.classList.contains('is-open')) return;
+      trigger.focus({ preventScroll: true });
+      keyboardOpen = false;
+      setOpen(false);
+    });
+
+    linkElements.forEach((link, index) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        setActive(index);
+        window.history.pushState(null, '', link.hash);
+        headings[index].scrollIntoView({
+          behavior: reducedMotion.matches ? 'auto' : 'smooth',
+          block: 'start',
+        });
+      });
+    });
+
+    const updateActiveHeading = () => {
+      const activationTop = 91;
+      let nextActiveIndex = 0;
+
+      headings.forEach((heading, index) => {
+        if (heading.getBoundingClientRect().top <= activationTop) nextActiveIndex = index;
+      });
+
+      setActive(nextActiveIndex);
+    };
+
+    const observer = new IntersectionObserver(updateActiveHeading, {
+      rootMargin: '-90px 0px -65% 0px',
+      threshold: [0, 1],
+    });
+    headings.forEach((heading) => observer.observe(heading));
+    updateActiveHeading();
+
+    const scrollToInitialHash = () => {
+      const hash = decodeURIComponent(window.location.hash.slice(1));
+      if (!hash) return;
+      const index = headings.findIndex((heading) => heading.id === hash);
+      if (index < 0) return;
+
+      setActive(index);
+      requestAnimationFrame(() => {
+        headings[index].scrollIntoView({ behavior: 'auto', block: 'start' });
+      });
+    };
+
+    scrollToInitialHash();
+    window.addEventListener('hashchange', scrollToInitialHash);
+  });
+</script>
+
+<style is:global>
+  .project-toc {
+    display: none;
+  }
+
+  .project-toc[hidden] {
+    display: none !important;
+  }
+
+  .article-content :is(h2, h3, h4) {
+    scroll-margin-top: 90px;
+  }
+
+  @media (max-width: 839px) {
+    .article-content :is(h2, h3, h4) {
+      scroll-margin-top: 79px;
+    }
+  }
+
+  @media (max-width: 340px) {
+    .article-content :is(h2, h3, h4) {
+      scroll-margin-top: 73px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .project-toc {
+      position: fixed;
+      z-index: 20;
+      top: 50%;
+      right: 24px;
+      display: block;
+      width: 32px;
+      height: min-content;
+      transform: translateY(-50%);
+    }
+
+    .project-toc.is-open {
+      width: 220px;
+    }
+
+    .project-toc .project-toc__trigger {
+      display: block;
+      width: 32px;
+      margin-left: auto;
+      padding: 12px 0 12px 12px;
+      border: 0;
+      appearance: none;
+      background: transparent;
+      color: #666c80;
+      cursor: pointer;
+    }
+
+    .project-toc .project-toc__trigger:focus-visible {
+      border-radius: 4px;
+      outline: 2px solid #2893c9;
+      outline-offset: 3px;
+    }
+
+    .project-toc .project-toc__markers {
+      display: flex;
+      width: 20px;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      background: transparent;
+    }
+
+    .project-toc .project-toc__marker {
+      display: block;
+      width: 16px;
+      height: 3px;
+      flex: 0 0 3px;
+      border: 0;
+      border-radius: 3px;
+      background: #e5e3ea;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .project-toc .project-toc__marker--h2 {
+      width: 20px;
+    }
+
+    .project-toc .project-toc__marker.is-active {
+      background: #666c80;
+    }
+
+    .project-toc .project-toc__panel {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      width: 220px;
+      max-height: 60vh;
+      box-sizing: border-box;
+      padding: 12px;
+      overflow-y: auto;
+      border: 0;
+      border-radius: 12px;
+      background: #f4f3f6;
+      opacity: 0;
+      pointer-events: none;
+      scrollbar-color: #c9c7d0 transparent;
+      scrollbar-width: thin;
+      transform: translate(5px, -50%);
+      visibility: hidden;
+      transition:
+        opacity 140ms ease,
+        transform 140ms ease,
+        visibility 0s linear 140ms;
+    }
+
+    .project-toc.is-open .project-toc__trigger {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .project-toc.is-open .project-toc__panel {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(0, -50%);
+      visibility: visible;
+      transition:
+        opacity 140ms ease,
+        transform 140ms ease,
+        visibility 0s;
+    }
+
+    .project-toc .project-toc__list {
+      display: flex;
+      margin: 0;
+      padding: 0;
+      flex-direction: column;
+      list-style: none;
+    }
+
+    .project-toc .project-toc__link {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+      padding-top: 6px;
+      padding-right: 4px;
+      padding-bottom: 6px;
+      padding-left: 4px;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #666c80;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      text-decoration: none;
+      white-space: normal;
+    }
+
+    .project-toc .project-toc__link--h3,
+    .project-toc .project-toc__link--h4 {
+      padding-left: 18px;
+    }
+
+    .project-toc .project-toc__link.is-active {
+      color: #2893c9;
+      background: transparent;
+      font-weight: 400;
+      text-decoration: none;
+    }
+
+    .project-toc .project-toc__link:hover,
+    .project-toc .project-toc__link:focus-visible {
+      background: #fff;
+      color: #242833;
+      text-decoration: none;
+    }
+
+    .project-toc .project-toc__link:focus-visible {
+      outline: 2px solid #2893c9;
+      outline-offset: 1px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-toc .project-toc__panel,
+    .project-toc.is-open .project-toc__panel {
+      transition: none;
+    }
+  }
+</style>

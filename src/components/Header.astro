@@ -36,6 +36,8 @@ import UiButton from './UiButton.astro';
 
 <script>
   const mobileQuery = window.matchMedia('(max-width: 839px)');
+  const header = document.querySelector<HTMLElement>('.site-header');
+  const showHeader = () => header?.classList.remove('is-hidden');
 
   document.querySelectorAll<HTMLElement>('.contact-area').forEach((area) => {
     const toggle = area.querySelector<HTMLButtonElement>('[data-contact-toggle]');
@@ -44,6 +46,7 @@ import UiButton from './UiButton.astro';
     const setOpen = (open: boolean) => {
       area.classList.toggle('is-open', open);
       toggle.setAttribute('aria-expanded', String(open));
+      if (open) showHeader();
     };
 
     const close = (force = false) => {
@@ -93,15 +96,89 @@ import UiButton from './UiButton.astro';
 
     mobileQuery.addEventListener('change', () => close());
   });
+
+  if (header && !header.dataset.autoHideInitialized) {
+    const movementThreshold = 10;
+    const safeTopZone = 90;
+    const safeBottomZone = 100;
+    let previousScrollY = Math.max(0, window.scrollY);
+    let accumulatedMovement = 0;
+    let animationFrame: number | undefined;
+
+    header.dataset.autoHideInitialized = 'true';
+
+    const interactionKeepsHeaderVisible = () =>
+      header.matches(':focus-within') || Boolean(header.querySelector('.contact-area.is-open'));
+
+    const isNearPageBottom = (scrollY: number) =>
+      window.innerHeight + scrollY >= document.documentElement.scrollHeight - safeBottomZone;
+
+    const updateHeader = () => {
+      const currentScrollY = Math.max(0, window.scrollY);
+      const delta = currentScrollY - previousScrollY;
+      previousScrollY = currentScrollY;
+
+      if (document.documentElement.hasAttribute('data-lightbox-open')) {
+        accumulatedMovement = 0;
+        return;
+      }
+
+      if (
+        currentScrollY <= safeTopZone ||
+        isNearPageBottom(currentScrollY) ||
+        interactionKeepsHeaderVisible()
+      ) {
+        accumulatedMovement = 0;
+        showHeader();
+        return;
+      }
+
+      if ((delta > 0 && accumulatedMovement < 0) || (delta < 0 && accumulatedMovement > 0)) {
+        accumulatedMovement = 0;
+      }
+
+      accumulatedMovement += delta;
+      if (Math.abs(accumulatedMovement) < movementThreshold) return;
+
+      header.classList.toggle('is-hidden', accumulatedMovement > 0);
+      accumulatedMovement = 0;
+    };
+
+    window.addEventListener('scroll', () => {
+      if (animationFrame !== undefined) return;
+
+      animationFrame = window.requestAnimationFrame(() => {
+        updateHeader();
+        animationFrame = undefined;
+      });
+    }, { passive: true });
+
+    header.addEventListener('focusin', showHeader);
+    window.addEventListener('portfolio:header-scroll-sync', (event) => {
+      const hidden = (event as CustomEvent<{ hidden?: boolean }>).detail?.hidden;
+      previousScrollY = Math.max(0, window.scrollY);
+      accumulatedMovement = 0;
+      if (typeof hidden === 'boolean') header.classList.toggle('is-hidden', hidden);
+    });
+    updateHeader();
+  }
 </script>
 
 <style>
   .site-header {
-    position: relative;
-    z-index: 10;
+    position: sticky;
+    z-index: 30;
+    top: 0;
     height: 74px;
     border-bottom: 1px solid var(--color-navigation-stroke);
     background: var(--color-white);
+    transform: translateY(0);
+    transition: transform 250ms ease;
+    will-change: transform;
+  }
+
+  .site-header.is-hidden {
+    transform: translateY(calc(-100% - 2px));
   }
 
   .header-inner {
@@ -261,6 +338,12 @@ import UiButton from './UiButton.astro';
 
     :global(.ui-button.header-button) {
       padding-inline: 14px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-header {
+      transition: none;
     }
   }
 </style>

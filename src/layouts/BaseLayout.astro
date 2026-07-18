@@ -1,4 +1,6 @@
 ---
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import '../styles/global.css';
@@ -6,12 +8,32 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  favicon?: string;
 }
 
 const {
   title,
   description = 'Портфолио продуктового дизайнера Константина Вершигоры.',
+  favicon,
 } = Astro.props;
+
+const faviconTypes: Record<string, string> = {
+  ico: 'image/x-icon',
+  png: 'image/png',
+  svg: 'image/svg+xml',
+  webp: 'image/webp',
+};
+const faviconPath = favicon?.trim();
+const faviconExtension = faviconPath
+  ?.match(/\.([a-z0-9]+)(?:[?#].*)?$/i)?.[1]
+  ?.toLocaleLowerCase();
+const faviconType = faviconExtension ? faviconTypes[faviconExtension] : undefined;
+const localFaviconExists = faviconPath?.startsWith('/')
+  ? existsSync(resolve(process.cwd(), 'public', faviconPath.split(/[?#]/)[0].replace(/^\/+/, '')))
+  : true;
+const projectFavicon = faviconPath && faviconType && localFaviconExists
+  ? { href: faviconPath, type: faviconType }
+  : undefined;
 ---
 
 <!doctype html>
@@ -20,8 +42,16 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    {
+      projectFavicon ? (
+        <link rel="icon" type={projectFavicon.type} href={projectFavicon.href} />
+      ) : (
+        <>
+          <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+          <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+        </>
+      )
+    }
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>{title}</title>
   </head>

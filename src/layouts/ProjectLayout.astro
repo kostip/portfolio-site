@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import ImageLightbox from '../components/ImageLightbox.astro';
 import ProjectNavigation from '../components/ProjectNavigation.astro';
 import ProjectToc from '../components/ProjectToc.astro';
 import UiButton from '../components/UiButton.astro';
@@ -95,6 +96,7 @@ const projectFavicon = titleIconIsImage
       <slot />
     </article>
 
+    {project.data.order !== undefined && <ImageLightbox />}
 
     {project.data.order !== undefined && <ProjectToc />}
 

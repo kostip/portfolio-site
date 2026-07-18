@@ -1,0 +1,717 @@
+<div
+  class="image-lightbox"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Полноэкранный просмотр изображения"
+  hidden
+  data-image-lightbox
+>
+  <div class="image-lightbox__stage" data-image-lightbox-stage>
+    <img class="image-lightbox__image" alt="" data-image-lightbox-image />
+  </div>
+  <button
+    class="image-lightbox__close"
+    type="button"
+    aria-label="Закрыть полноэкранное изображение"
+    data-image-lightbox-close
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 5l14 14M19 5L5 19" />
+    </svg>
+  </button>
+</div>
+
+<script>
+  type Point = { x: number; y: number };
+  type InertRecord = { element: HTMLElement; inert: boolean };
+  type LightboxState = 'closed' | 'opening' | 'open' | 'closing';
+
+  const lightboxSelector = [
+    '.project-cover.wide > img',
+    '.article-content > p > img',
+    '.article-content img.project-image',
+  ].join(', ');
+
+  document.querySelectorAll<HTMLElement>('[data-image-lightbox]').forEach((overlay) => {
+    if (overlay.dataset.initialized) return;
+    overlay.dataset.initialized = 'true';
+
+    const stage = overlay.querySelector<HTMLElement>('[data-image-lightbox-stage]');
+    const viewerImage = overlay.querySelector<HTMLImageElement>('[data-image-lightbox-image]');
+    const closeButton = overlay.querySelector<HTMLButtonElement>('[data-image-lightbox-close]');
+    const projectPage = overlay.closest<HTMLElement>('.project-page');
+    if (!stage || !viewerImage || !closeButton || !projectPage) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mobileMode = window.matchMedia('(max-width: 839px)');
+    const pointers = new Map<number, Point>();
+    const inertRecords: InertRecord[] = [];
+    const openDuration = 280;
+    const resetDuration = 180;
+    const easing = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+    let state: LightboxState = 'closed';
+    let activeSource: HTMLImageElement | null = null;
+    let sourceVisibility = '';
+    let savedScrollY = 0;
+    let savedBodyStyles = '';
+    let savedHtmlOverflow = '';
+    let savedHtmlScrollBehavior = '';
+    let savedHeaderHidden = false;
+    let baseWidth = 0;
+    let baseHeight = 0;
+    let scale = 1;
+    let panX = 0;
+    let panY = 0;
+    let targetPanX = 0;
+    let targetPanY = 0;
+    let pointerStart: Point | null = null;
+    let panStart: Point = { x: 0, y: 0 };
+    let pinchStartDistance = 0;
+    let pinchStartScale = 1;
+    let pinchContentPoint: Point = { x: 0, y: 0 };
+    let gestureMoved = false;
+    let pinchOccurred = false;
+    let lastTapTime = 0;
+    let lastTapPoint: Point = { x: 0, y: 0 };
+    let panFrame: number | undefined;
+    let flipAnimation: Animation | null = null;
+
+    const duration = (value: number) => reducedMotion.matches ? 1 : value;
+    const clamp = (value: number, minimum: number, maximum: number) =>
+      Math.min(maximum, Math.max(minimum, value));
+
+    const getViewportMargin = () => mobileMode.matches ? 10 : 40;
+
+    const calculateFit = () => {
+      const naturalWidth = viewerImage.naturalWidth || activeSource?.naturalWidth || 1;
+      const naturalHeight = viewerImage.naturalHeight || activeSource?.naturalHeight || 1;
+      const margin = getViewportMargin();
+      const availableWidth = Math.max(1, window.innerWidth - (margin * 2));
+      const availableHeight = Math.max(1, window.innerHeight - (margin * 2));
+      let fitScale = 1;
+
+      if (mobileMode.matches) {
+        fitScale = Math.min(1, availableWidth / naturalWidth);
+        if (naturalHeight * fitScale > availableHeight) {
+          fitScale *= availableHeight / (naturalHeight * fitScale);
+        }
+      } else {
+        fitScale = Math.min(1, availableHeight / naturalHeight);
+        if (naturalWidth * fitScale > availableWidth) {
+          fitScale *= availableWidth / (naturalWidth * fitScale);
+        }
+      }
+
+      baseWidth = Math.max(1, naturalWidth * fitScale);
+      baseHeight = Math.max(1, naturalHeight * fitScale);
+      stage.style.left = `${(window.innerWidth - baseWidth) / 2}px`;
+      stage.style.top = `${(window.innerHeight - baseHeight) / 2}px`;
+      stage.style.width = `${baseWidth}px`;
+      stage.style.height = `${baseHeight}px`;
+    };
+
+    const getPanBounds = (nextScale = scale) => {
+      return {
+        x: Math.max(0, ((baseWidth * nextScale) - window.innerWidth) / 2),
+        y: Math.max(0, ((baseHeight * nextScale) - window.innerHeight) / 2),
+      };
+    };
+
+    const constrainPan = () => {
+      const bounds = getPanBounds();
+      panX = clamp(panX, -bounds.x, bounds.x);
+      panY = clamp(panY, -bounds.y, bounds.y);
+      targetPanX = clamp(targetPanX, -bounds.x, bounds.x);
+      targetPanY = clamp(targetPanY, -bounds.y, bounds.y);
+    };
+
+    const transformValue = () => `translate3d(${panX}px, ${panY}px, 0) scale(${scale})`;
+
+    const applyImageTransform = (immediate = false) => {
+      viewerImage.classList.toggle('is-gesturing', immediate);
+      viewerImage.style.transform = transformValue();
+      viewerImage.classList.toggle('is-zoomed', scale > 1.001);
+    };
+
+    const zoomAtPoint = (nextScale: number, clientX: number, clientY: number) => {
+      const stageCenterX = window.innerWidth / 2;
+      const stageCenterY = window.innerHeight / 2;
+      const contentX = (clientX - stageCenterX - panX) / scale;
+      const contentY = (clientY - stageCenterY - panY) / scale;
+      scale = clamp(nextScale, 1, mobileMode.matches ? 3 : 1.5);
+      panX = clientX - stageCenterX - (contentX * scale);
+      panY = clientY - stageCenterY - (contentY * scale);
+      targetPanX = panX;
+      targetPanY = panY;
+      constrainPan();
+      applyImageTransform(false);
+    };
+
+    const cancelPanFrame = () => {
+      if (panFrame !== undefined) window.cancelAnimationFrame(panFrame);
+      panFrame = undefined;
+    };
+
+    const runMousePan = () => {
+      const deltaX = targetPanX - panX;
+      const deltaY = targetPanY - panY;
+      panX += deltaX * 0.18;
+      panY += deltaY * 0.18;
+      applyImageTransform(true);
+
+      if (Math.abs(deltaX) > 0.1 || Math.abs(deltaY) > 0.1) {
+        panFrame = window.requestAnimationFrame(runMousePan);
+      } else {
+        panX = targetPanX;
+        panY = targetPanY;
+        applyImageTransform(true);
+        panFrame = undefined;
+      }
+    };
+
+    const scheduleMousePan = () => {
+      if (panFrame === undefined) panFrame = window.requestAnimationFrame(runMousePan);
+    };
+
+    const setBackgroundInert = () => {
+      const targets = new Set<HTMLElement>();
+      Array.from(document.body.children).forEach((element) => {
+        if (!(element instanceof HTMLElement) || element.contains(overlay)) return;
+        targets.add(element);
+      });
+      Array.from(projectPage.children).forEach((element) => {
+        if (element instanceof HTMLElement && element !== overlay) targets.add(element);
+      });
+
+      targets.forEach((element) => {
+        inertRecords.push({ element, inert: element.inert });
+        element.inert = true;
+      });
+    };
+
+    const restoreBackgroundInert = () => {
+      inertRecords.forEach(({ element, inert }) => {
+        element.inert = inert;
+      });
+      inertRecords.length = 0;
+    };
+
+    const lockPageScroll = () => {
+      savedScrollY = Math.max(0, window.scrollY);
+      savedHeaderHidden = Boolean(document.querySelector('.site-header')?.classList.contains('is-hidden'));
+      savedBodyStyles = document.body.style.cssText;
+      savedHtmlOverflow = document.documentElement.style.overflow;
+      savedHtmlScrollBehavior = document.documentElement.style.scrollBehavior;
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const currentPadding = Number.parseFloat(getComputedStyle(document.body).paddingRight) || 0;
+
+      document.documentElement.setAttribute('data-lightbox-open', '');
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${savedScrollY}px`;
+      document.body.style.right = '0';
+      document.body.style.left = '0';
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      if (scrollbarWidth > 0) document.body.style.paddingRight = `${currentPadding + scrollbarWidth}px`;
+    };
+
+    const unlockPageScroll = () => {
+      document.body.style.cssText = savedBodyStyles;
+      document.documentElement.style.overflow = savedHtmlOverflow;
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo(0, savedScrollY);
+      document.querySelector('.site-header')?.classList.toggle('is-hidden', savedHeaderHidden);
+      window.dispatchEvent(new CustomEvent('portfolio:header-scroll-sync', {
+        detail: { hidden: savedHeaderHidden },
+      }));
+      document.documentElement.removeAttribute('data-lightbox-open');
+      document.documentElement.style.scrollBehavior = savedHtmlScrollBehavior;
+    };
+
+    const resetGestureState = () => {
+      pointers.clear();
+      pointerStart = null;
+      pinchStartDistance = 0;
+      gestureMoved = false;
+      pinchOccurred = false;
+      lastTapTime = 0;
+      scale = 1;
+      panX = 0;
+      panY = 0;
+      targetPanX = 0;
+      targetPanY = 0;
+      cancelPanFrame();
+      viewerImage.classList.remove('is-gesturing', 'is-zoomed');
+      viewerImage.style.transform = 'translate3d(0, 0, 0) scale(1)';
+    };
+
+    const animateImageReset = async () => {
+      if (scale <= 1.001 && Math.abs(panX) < 0.1 && Math.abs(panY) < 0.1) return;
+      cancelPanFrame();
+      const from = getComputedStyle(viewerImage).transform;
+      scale = 1;
+      panX = 0;
+      panY = 0;
+      targetPanX = 0;
+      targetPanY = 0;
+      viewerImage.classList.add('is-gesturing');
+      viewerImage.style.transform = transformValue();
+      const animation = viewerImage.animate(
+        [{ transform: from }, { transform: transformValue() }],
+        { duration: duration(resetDuration), easing, fill: 'both' },
+      );
+      await animation.finished.catch(() => undefined);
+      animation.cancel();
+      viewerImage.classList.remove('is-gesturing', 'is-zoomed');
+    };
+
+    const finishClose = () => {
+      if (state === 'closed') return;
+      flipAnimation?.cancel();
+      flipAnimation = null;
+      overlay.classList.remove('is-visible');
+      overlay.hidden = true;
+      if (activeSource) activeSource.style.visibility = sourceVisibility;
+      restoreBackgroundInert();
+      unlockPageScroll();
+      resetGestureState();
+      viewerImage.removeAttribute('src');
+      viewerImage.removeAttribute('srcset');
+      viewerImage.removeAttribute('sizes');
+      viewerImage.alt = '';
+      stage.removeAttribute('style');
+      stage.classList.remove('is-flip-animating');
+      document.removeEventListener('keydown', handleDocumentKeydown, true);
+      const sourceToFocus = activeSource;
+      activeSource = null;
+      state = 'closed';
+      if (sourceToFocus?.isConnected) sourceToFocus.focus({ preventScroll: true });
+    };
+
+    const closeLightbox = async () => {
+      if (state === 'closed' || state === 'closing') return;
+      state = 'closing';
+      flipAnimation?.cancel();
+      flipAnimation = null;
+      await animateImageReset();
+
+      const sourceRect = activeSource?.isConnected
+        ? activeSource.getBoundingClientRect()
+        : null;
+      const stageRect = stage.getBoundingClientRect();
+      stage.classList.add('is-flip-animating');
+      overlay.classList.remove('is-visible');
+
+      if (sourceRect && sourceRect.width > 0 && sourceRect.height > 0) {
+        const sourceRadius = activeSource
+          ? getComputedStyle(activeSource).borderRadius
+          : '0px';
+        const translateX = sourceRect.left - stageRect.left;
+        const translateY = sourceRect.top - stageRect.top;
+        const scaleX = sourceRect.width / stageRect.width;
+        const scaleY = sourceRect.height / stageRect.height;
+        flipAnimation = stage.animate(
+          [
+            { transform: 'translate3d(0, 0, 0) scale(1)', borderRadius: '0px' },
+            {
+              transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`,
+              borderRadius: sourceRadius,
+            },
+          ],
+          { duration: duration(openDuration), easing, fill: 'both' },
+        );
+      } else {
+        flipAnimation = stage.animate(
+          [{ opacity: 1 }, { opacity: 0 }],
+          { duration: duration(160), easing, fill: 'both' },
+        );
+      }
+
+      await flipAnimation.finished.catch(() => undefined);
+      finishClose();
+    };
+
+    const openLightbox = async (source: HTMLImageElement) => {
+      if (state !== 'closed') return;
+      state = 'opening';
+      activeSource = source;
+      sourceVisibility = source.style.visibility;
+      const sourceRect = source.getBoundingClientRect();
+      const sourceRadius = getComputedStyle(source).borderRadius;
+
+      viewerImage.alt = source.alt;
+      viewerImage.src = source.currentSrc || source.src;
+      if (source.srcset) {
+        viewerImage.srcset = source.srcset;
+        viewerImage.sizes = '100vw';
+      }
+
+      try {
+        await viewerImage.decode();
+      } catch {
+        // The cached currentSrc can still be displayed when decode is unsupported or interrupted.
+      }
+
+      if (state !== 'opening') return;
+      source.style.visibility = 'hidden';
+      lockPageScroll();
+      setBackgroundInert();
+      resetGestureState();
+      overlay.hidden = false;
+      document.addEventListener('keydown', handleDocumentKeydown, true);
+      calculateFit();
+      stage.classList.add('is-flip-animating');
+      const stageRect = stage.getBoundingClientRect();
+      const translateX = sourceRect.left - stageRect.left;
+      const translateY = sourceRect.top - stageRect.top;
+      const scaleX = sourceRect.width / stageRect.width;
+      const scaleY = sourceRect.height / stageRect.height;
+
+      overlay.classList.add('is-visible');
+      flipAnimation = stage.animate(
+        [
+          {
+            transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scaleX}, ${scaleY})`,
+            borderRadius: sourceRadius,
+          },
+          { transform: 'translate3d(0, 0, 0) scale(1)', borderRadius: '0px' },
+        ],
+        { duration: duration(openDuration), easing, fill: 'both' },
+      );
+      closeButton.focus({ preventScroll: true });
+      await flipAnimation.finished.catch(() => undefined);
+      if (state === 'opening') {
+        flipAnimation.cancel();
+        flipAnimation = null;
+        stage.classList.remove('is-flip-animating');
+        state = 'open';
+      }
+    };
+
+    const resetToCenter = () => {
+      scale = 1;
+      panX = 0;
+      panY = 0;
+      targetPanX = 0;
+      targetPanY = 0;
+      applyImageTransform(false);
+    };
+
+    const getDistance = (first: Point, second: Point) =>
+      Math.hypot(second.x - first.x, second.y - first.y);
+
+    const getMidpoint = (first: Point, second: Point): Point => ({
+      x: (first.x + second.x) / 2,
+      y: (first.y + second.y) / 2,
+    });
+
+    const beginPinch = () => {
+      const [first, second] = Array.from(pointers.values());
+      if (!first || !second) return;
+      const midpoint = getMidpoint(first, second);
+      pinchStartDistance = Math.max(1, getDistance(first, second));
+      pinchStartScale = scale;
+      pinchContentPoint = {
+        x: (midpoint.x - (window.innerWidth / 2) - panX) / scale,
+        y: (midpoint.y - (window.innerHeight / 2) - panY) / scale,
+      };
+      pinchOccurred = true;
+      gestureMoved = true;
+    };
+
+    const handleDoubleTap = (point: Point) => {
+      const now = performance.now();
+      const distanceFromLastTap = Math.hypot(point.x - lastTapPoint.x, point.y - lastTapPoint.y);
+      if (now - lastTapTime <= 300 && distanceFromLastTap <= 32) {
+        if (scale > 1.001) resetToCenter();
+        else zoomAtPoint(2, point.x, point.y);
+        lastTapTime = 0;
+        return;
+      }
+      lastTapTime = now;
+      lastTapPoint = point;
+    };
+
+    projectPage.querySelectorAll<HTMLImageElement>(lightboxSelector).forEach((image) => {
+      if (image.closest('a, button')) return;
+      image.classList.add('is-lightbox-enabled');
+      if (!image.hasAttribute('tabindex')) image.tabIndex = 0;
+      image.setAttribute('role', 'button');
+      image.setAttribute(
+        'aria-label',
+        image.alt.trim() ? `Открыть изображение: ${image.alt.trim()}` : 'Открыть изображение',
+      );
+      image.addEventListener('click', () => openLightbox(image));
+      image.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        openLightbox(image);
+      });
+    });
+
+    viewerImage.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (mobileMode.matches || state !== 'open') return;
+      if (scale > 1.001) resetToCenter();
+      else zoomAtPoint(1.5, event.clientX, event.clientY);
+    });
+
+    overlay.addEventListener('pointermove', (event) => {
+      if (mobileMode.matches || event.pointerType !== 'mouse' || scale <= 1.001 || state !== 'open') return;
+      const bounds = getPanBounds();
+      const normalizedX = clamp(((event.clientX / window.innerWidth) * 2) - 1, -1, 1);
+      const normalizedY = clamp(((event.clientY / window.innerHeight) * 2) - 1, -1, 1);
+      targetPanX = -normalizedX * bounds.x;
+      targetPanY = -normalizedY * bounds.y;
+      scheduleMousePan();
+    });
+
+    viewerImage.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+      if (!mobileMode.matches || event.pointerType === 'mouse' || state !== 'open') return;
+      viewerImage.setPointerCapture(event.pointerId);
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      viewerImage.classList.add('is-gesturing');
+      gestureMoved = false;
+      pointerStart = { x: event.clientX, y: event.clientY };
+      panStart = { x: panX, y: panY };
+      if (pointers.size === 2) beginPinch();
+    });
+
+    viewerImage.addEventListener('pointermove', (event) => {
+      if (!pointers.has(event.pointerId) || !mobileMode.matches) return;
+      event.preventDefault();
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+      if (pointers.size >= 2) {
+        const [first, second] = Array.from(pointers.values());
+        if (!first || !second) return;
+        const midpoint = getMidpoint(first, second);
+        const nextScale = clamp(
+          pinchStartScale * (getDistance(first, second) / pinchStartDistance),
+          1,
+          3,
+        );
+        scale = nextScale;
+        panX = midpoint.x - (window.innerWidth / 2) - (pinchContentPoint.x * scale);
+        panY = midpoint.y - (window.innerHeight / 2) - (pinchContentPoint.y * scale);
+        targetPanX = panX;
+        targetPanY = panY;
+        constrainPan();
+        applyImageTransform(true);
+        return;
+      }
+
+      if (pointerStart && scale > 1.001) {
+        const deltaX = event.clientX - pointerStart.x;
+        const deltaY = event.clientY - pointerStart.y;
+        if (Math.hypot(deltaX, deltaY) > 5) gestureMoved = true;
+        panX = panStart.x + deltaX;
+        panY = panStart.y + deltaY;
+        targetPanX = panX;
+        targetPanY = panY;
+        constrainPan();
+        applyImageTransform(true);
+      }
+    });
+
+    const endPointer = (event: PointerEvent) => {
+      if (!pointers.has(event.pointerId)) return;
+      const point = pointers.get(event.pointerId) ?? { x: event.clientX, y: event.clientY };
+      pointers.delete(event.pointerId);
+
+      if (pointers.size === 1) {
+        const remaining = Array.from(pointers.values())[0];
+        if (remaining) {
+          pointerStart = remaining;
+          panStart = { x: panX, y: panY };
+        }
+      } else if (pointers.size === 0) {
+        if (scale <= 1.001) resetToCenter();
+        else {
+          constrainPan();
+          applyImageTransform(false);
+        }
+        if (!gestureMoved && !pinchOccurred) handleDoubleTap(point);
+        pointerStart = null;
+        pinchOccurred = false;
+        viewerImage.classList.remove('is-gesturing');
+      }
+    };
+
+    viewerImage.addEventListener('pointerup', endPointer);
+    viewerImage.addEventListener('pointercancel', endPointer);
+
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) closeLightbox();
+    });
+    closeButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      closeLightbox();
+    });
+    const handleDocumentKeydown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || state === 'closed') return;
+      event.preventDefault();
+      closeLightbox();
+    };
+
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        closeButton.focus({ preventScroll: true });
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (state === 'closed') return;
+      if (state === 'closing') {
+        finishClose();
+        return;
+      }
+      if (state === 'opening') {
+        flipAnimation?.cancel();
+        flipAnimation = null;
+        stage.classList.remove('is-flip-animating');
+        state = 'open';
+      }
+      calculateFit();
+      scale = clamp(scale, 1, mobileMode.matches ? 3 : 1.5);
+      constrainPan();
+      applyImageTransform(true);
+    });
+  });
+</script>
+
+<style is:global>
+  .project-page .is-lightbox-enabled {
+    cursor: zoom-in;
+  }
+
+  .project-page .is-lightbox-enabled:focus-visible {
+    outline: 2px solid #2893c9;
+    outline-offset: 4px;
+  }
+
+  .image-lightbox[hidden] {
+    display: none !important;
+  }
+
+  .image-lightbox {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: flex;
+    width: 100%;
+    height: 100dvh;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #fff;
+    opacity: 0;
+    overscroll-behavior: contain;
+    touch-action: none;
+    transition: opacity 180ms ease;
+  }
+
+  .image-lightbox.is-visible {
+    opacity: 1;
+  }
+
+  .image-lightbox .image-lightbox__stage {
+    position: absolute;
+    overflow: visible;
+    border: 0;
+    transform: translate3d(0, 0, 0);
+    transform-origin: top left;
+  }
+
+  .image-lightbox .image-lightbox__stage.is-flip-animating {
+    overflow: hidden;
+  }
+
+  .image-lightbox .image-lightbox__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: contain;
+    transform: translate3d(0, 0, 0) scale(1);
+    transform-origin: center;
+    cursor: zoom-in;
+    user-select: none;
+    -webkit-user-drag: none;
+    transition: transform 180ms ease-out;
+  }
+
+  .image-lightbox .image-lightbox__image.is-zoomed {
+    cursor: zoom-out;
+  }
+
+  .image-lightbox .image-lightbox__image.is-gesturing {
+    transition: none;
+  }
+
+  .image-lightbox .image-lightbox__close {
+    position: absolute;
+    z-index: 2;
+    top: 32px;
+    right: 32px;
+    display: grid;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border: 0;
+    place-items: center;
+    appearance: none;
+    background: transparent;
+    color: #666c80;
+    cursor: pointer;
+  }
+
+  .image-lightbox .image-lightbox__close svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .image-lightbox .image-lightbox__close path {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 2;
+  }
+
+  .image-lightbox .image-lightbox__close:hover {
+    color: #242833;
+  }
+
+  .image-lightbox .image-lightbox__close:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid #2893c9;
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 839px) {
+    .image-lightbox .image-lightbox__close {
+      top: calc(20px + env(safe-area-inset-top));
+      right: calc(20px + env(safe-area-inset-right));
+      width: 42px;
+      height: 42px;
+      padding: 11px;
+    }
+
+    .image-lightbox .image-lightbox__close:active {
+      color: #242833;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .image-lightbox,
+    .image-lightbox .image-lightbox__image {
+      transition: none;
+    }
+  }
+</style>

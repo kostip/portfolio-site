@@ -18,6 +18,7 @@
   --gradient-default: linear-gradient(110deg, #349ad3 0%, #b33ad0 100%);
   --gradient-hover: linear-gradient(110deg, #52b7f0 0%, #d456f2 100%);
   --gradient-focus: linear-gradient(110deg, #288ac0 0%, #a029bd 100%);
+  --gradient-email: linear-gradient(90deg, #3e65cf 0%, #c71610 24%, #f2a60c 51%, #3b60c4 76%, #08851b 100%);
 
   --color-background: var(--color-white);
   --color-surface: var(--color-white);

@@ -11,7 +11,7 @@ const { autoHide = true } = Astro.props;
 
 <header class="site-header" data-auto-hide={autoHide ? 'true' : 'false'}>
   <div class="header-inner">
-    <a class="logo-author" href="/" aria-label="Константин Вершигора — на главную">
+    <a class="logo-author" href="/" aria-label="Константин Вершигора — на главную">
       <img
         class="logo-author__avatar"
         src="/images/common/avatar.webp"
@@ -23,7 +23,7 @@ const { autoHide = true } = Astro.props;
     </a>
 
     <nav class="header-navigation" aria-label="Основная навигация">
-      <UiButton class="header-button header-button--projects" href="/" label="Проекты" />
+      <UiButton class="header-button header-button--projects" href="/#projects" label="Проекты" />
       <div class="contact-area">
         <UiButton
           class="header-button header-button--contact"
@@ -98,6 +98,10 @@ const { autoHide = true } = Astro.props;
       if (event.key !== 'Escape' || !area.classList.contains('is-open')) return;
       toggle.focus();
       close(!mobileQuery.matches);
+    });
+
+    area.querySelectorAll<HTMLAnchorElement>('.contact-dropdown__link').forEach((link) => {
+      link.addEventListener('click', () => close());
     });
 
     mobileQuery.addEventListener('change', () => close());

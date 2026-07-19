@@ -1,108 +1,258 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import UiButton from './UiButton.astro';
 
 interface Props {
   project: CollectionEntry<'projects'>;
+  eager?: boolean;
 }
 
-const { project } = Astro.props;
+const { project, eager = false } = Astro.props;
+const href = `/projects/${project.id}/`;
+const cardTitle = project.data.cardTitle ?? project.data.title;
+const [projectName, ...titleParts] = cardTitle.split(' — ');
+const titleRest = titleParts.join(' — ');
+const titleIconIsImage = /^(?:\/|https?:\/\/|data:)/.test(project.data.titleIcon ?? '');
+const accessibleProjectName = projectName.replace(/[«»]/g, '');
 ---
 
-<article class="project-card">
-  <a class="card-link" href={`/projects/${project.id}/`}>
+<article class="project-card" style={`--project-accent: ${project.data.accent ?? '#242833'}`}>
+  <div class="project-card__info">
     {
-      project.data.cover ? (
-        <div class="card-visual card-visual--image">
-          <img src={project.data.cover} alt={project.data.coverAlt ?? ''} loading="lazy" />
-        </div>
-      ) : (
-        <div class="card-visual" aria-hidden="true">
-          <span>Предпросмотр проекта</span>
-        </div>
+      project.data.cover && (
+        <a
+          class="project-card__cover-link"
+          href={href}
+          aria-label={`Открыть кейс ${accessibleProjectName}`}
+        >
+          <img
+            class="project-card__cover"
+            src={project.data.cover}
+            width="1920"
+            height="1200"
+            alt={project.data.coverAlt ?? `Обложка проекта ${accessibleProjectName}`}
+            loading={eager ? 'eager' : 'lazy'}
+            fetchpriority={eager ? 'high' : 'auto'}
+          />
+        </a>
       )
     }
-    <div class="card-copy">
-      <div class="card-meta">
-        <span>{project.data.role}</span>
-        {project.data.year && <span>{project.data.year}</span>}
-      </div>
-      <h3>{project.data.title}</h3>
-      <p>{project.data.description}</p>
-      <span class="card-action">Открыть кейс <span aria-hidden="true">→</span></span>
+
+    {project.data.tags && (
+      <ul class="project-card__tags" aria-label="Категории проекта">
+        {project.data.tags.map((tag) => <li>{tag}</li>)}
+      </ul>
+    )}
+
+    <div class="project-card__copy">
+      <h3>
+        <a class="project-card__title-link" href={href}>
+          {project.data.titleIcon && (
+            <span class="project-card__icon" aria-hidden="true">
+              {titleIconIsImage ? (
+                <img src={project.data.titleIcon} width="30" height="30" alt="" />
+              ) : (
+                project.data.titleIcon
+              )}
+            </span>
+          )}
+          <span>
+            <span class="project-card__name">{projectName}</span>
+            {titleRest && ` — ${titleRest}`}
+          </span>
+        </a>
+      </h3>
+      <p>{project.data.cardDescription ?? project.data.description}</p>
     </div>
-  </a>
+  </div>
+
+  <UiButton
+    class="project-card__button"
+    href={href}
+    label="Смотреть кейс"
+    icon="right"
+    aria-label={`Смотреть кейс ${accessibleProjectName}`}
+  />
 </article>
 
 <style>
   .project-card {
-    border: 1px solid var(--color-line);
-    background: var(--color-surface);
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 32px;
   }
 
-  .card-link {
+  .project-card__info {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .project-card__cover-link {
     display: block;
-    height: 100%;
-    color: inherit;
-    text-decoration: none;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    outline-offset: 4px;
   }
 
-  .card-visual {
-    display: grid;
-    min-height: clamp(15rem, 32vw, 23rem);
-    place-items: center;
-    border-bottom: 1px solid var(--color-line);
-    background: var(--color-placeholder);
-    color: var(--color-muted);
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
+  .project-card__cover-link:focus-visible {
+    outline: 3px solid var(--project-accent);
+  }
+
+  .project-card__cover {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1920 / 1200;
+    object-fit: cover;
+    transition: opacity 180ms ease;
+  }
+
+  .project-card__cover-link:hover .project-card__cover {
+    opacity: 0.9;
+  }
+
+  .project-card__tags {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+  }
+
+  .project-card__tags li {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #f4f3f6;
+    color: #a8a3b0;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    line-height: normal;
     text-transform: uppercase;
   }
 
-  .card-visual--image {
-    display: block;
-    overflow: hidden;
-  }
-
-  .card-visual img {
-    width: 100%;
-    height: 100%;
-    min-height: inherit;
-    object-fit: cover;
-  }
-
-  .card-copy {
-    padding: clamp(1.25rem, 3vw, 2rem);
-  }
-
-  .card-meta {
+  .project-card__copy {
     display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    color: var(--color-muted);
-    font-size: 0.85rem;
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 
   h3 {
-    margin: 1rem 0 0.65rem;
-    font-size: clamp(1.4rem, 3vw, 2rem);
-    line-height: 1.15;
-  }
-
-  p {
+    width: 100%;
     margin: 0;
-    color: var(--color-muted);
-    line-height: 1.55;
-  }
-
-  .card-action {
-    display: inline-block;
-    margin-top: 1.5rem;
+    font-size: 24px;
     font-weight: 600;
+    line-height: 1.2;
   }
 
-  .card-link:hover .card-action,
-  .card-link:focus-visible .card-action {
+  .project-card__title-link {
+    display: flex;
+    width: fit-content;
+    max-width: 100%;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--color-black-text);
+    text-decoration: none;
+    text-wrap: pretty;
+    outline: none;
+  }
+
+  .project-card__title-link:focus-visible {
+    border-radius: 4px;
+    box-shadow: 0 0 0 3px rgb(36 40 51 / 20%);
+  }
+
+  .project-card__title-link:hover .project-card__name,
+  .project-card__title-link:focus-visible .project-card__name {
     text-decoration: underline;
-    text-underline-offset: 0.25em;
+    text-underline-offset: 0.18em;
+  }
+
+  .project-card__name {
+    color: var(--project-accent);
+  }
+
+  .project-card__icon {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    place-items: center;
+    overflow: hidden;
+    font-size: 25px;
+    line-height: 1;
+  }
+
+  .project-card__icon img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+  }
+
+  .project-card__copy p {
+    width: 100%;
+    max-width: 580px;
+    margin: 0;
+    color: rgb(36 40 51 / 60%);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: normal;
+  }
+
+  :global(.ui-button.project-card__button) {
+    height: auto;
+    padding: 16px 24px 16px 20px;
+    gap: 10px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  @media (max-width: 895px) {
+    .project-card {
+      gap: 24px;
+    }
+
+    .project-card__info {
+      gap: 18px;
+    }
+
+    .project-card__tags {
+      gap: 4px;
+    }
+
+    .project-card__tags li {
+      padding: 4px 6px;
+      font-size: 13px;
+    }
+
+    h3 {
+      font-size: 20px;
+    }
+
+    .project-card__icon {
+      display: none;
+    }
+
+    .project-card__copy p {
+      max-width: none;
+      font-size: 14px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-card__cover {
+      transition: none;
+    }
   }
 </style>

@@ -4,6 +4,7 @@ import ImageLightbox from '../components/ImageLightbox.astro';
 import ProjectNavigation from '../components/ProjectNavigation.astro';
 import ProjectToc from '../components/ProjectToc.astro';
 import UiButton from '../components/UiButton.astro';
+import { getPublicImageDimensions } from '../utils/projectImages.mjs';
 import BaseLayout from './BaseLayout.astro';
 
 interface Props {
@@ -32,6 +33,12 @@ const titleIconFavicons: Record<string, string> = {
 const projectFavicon = titleIconIsImage
   ? project.data.titleIcon
   : titleIconFavicons[project.data.titleIcon ?? ''];
+const coverDimensions = project.data.cover
+  ? await getPublicImageDimensions(project.data.cover)
+  : undefined;
+const titleIconDimensions = titleIconIsImage && project.data.titleIcon?.startsWith('/')
+  ? await getPublicImageDimensions(project.data.titleIcon)
+  : undefined;
 ---
 
 <BaseLayout
@@ -52,8 +59,8 @@ const projectFavicon = titleIconIsImage
               class="project-title-icon"
               src={project.data.titleIcon}
               alt={project.data.titleIconAlt ?? ''}
-              width="48"
-              height="48"
+              width={titleIconDimensions?.width ?? 48}
+              height={titleIconDimensions?.height ?? 48}
             />
           )
         }
@@ -83,7 +90,14 @@ const projectFavicon = titleIconIsImage
     {
       project.data.cover ? (
         <div class="project-cover wide">
-          <img src={project.data.cover} alt={project.data.coverAlt ?? ''} />
+          <img
+            src={project.data.cover}
+            alt={project.data.coverAlt ?? ''}
+            width={coverDimensions?.width}
+            height={coverDimensions?.height}
+            loading="eager"
+            fetchpriority="high"
+          />
         </div>
       ) : (
         <div class="hero-placeholder wide" aria-label="Место для главного изображения проекта">

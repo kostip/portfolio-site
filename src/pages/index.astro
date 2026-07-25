@@ -1,25 +1,25 @@
 ---
 import ProjectCard from '../components/ProjectCard.astro';
 import UiButton from '../components/UiButton.astro';
+import { contactDetails } from '../data/contacts';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getPublishedProjects } from '../utils/projects';
 
 const projects = await getPublishedProjects();
 
-const resumeUrl = 'https://novosibirsk.hh.ru/resume/2dada270ff06c0c99b0039ed1f474e644b6e41';
 const contacts = [
   {
     label: 'Telegram',
     text: 't.me/k0stip',
-    href: 'https://t.me/k0stip',
+    href: contactDetails.telegramUrl,
     icon: '/icons/tg.svg',
     kind: 'telegram',
     external: true,
   },
   {
     label: 'E-mail',
-    text: 'versh.konstantin@gmail.com',
-    href: 'mailto:versh.konstantin@gmail.com',
+    text: contactDetails.emailAddress,
+    href: contactDetails.emailUrl,
     icon: '/icons/email.svg',
     kind: 'email',
     external: false,
@@ -27,7 +27,7 @@ const contacts = [
   {
     label: 'HH.ru',
     text: 'Резюме на hh.ru',
-    href: resumeUrl,
+    href: contactDetails.hhResumeUrl,
     icon: '/icons/hh.svg',
     kind: 'hh',
     external: true,
@@ -54,7 +54,7 @@ const contacts = [
           </div>
           <UiButton
             class="hero__resume"
-            href={resumeUrl}
+            href={contactDetails.hhResumeUrl}
             label="Резюме на hh.ru"
             target="_blank"
             rel="noopener noreferrer"

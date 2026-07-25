@@ -1,7 +1,11 @@
-<nav id="contact-dropdown" class="contact-dropdown" aria-label="Контактные ссылки">
+---
+import { contactDetails } from '../data/contacts';
+---
+
+<div id="contact-dropdown" class="contact-dropdown">
   <a
     class="contact-dropdown__link contact-dropdown__link--telegram"
-    href="https://t.me/k0stip"
+    href={contactDetails.telegramUrl}
     target="_blank"
     rel="noopener noreferrer"
   >
@@ -10,7 +14,7 @@
   </a>
   <a
     class="contact-dropdown__link contact-dropdown__link--email"
-    href="mailto:versh.konstantin@gmail.com"
+    href={contactDetails.emailUrl}
     target="_blank"
     rel="noopener noreferrer"
   >
@@ -19,14 +23,14 @@
   </a>
   <a
     class="contact-dropdown__link contact-dropdown__link--hh"
-    href="https://novosibirsk.hh.ru/resume/2dada270ff06c0c99b0039ed1f474e644b6e41"
+    href={contactDetails.hhResumeUrl}
     target="_blank"
     rel="noopener noreferrer"
   >
     <img src="/icons/hh.svg" width="32" height="32" alt="" aria-hidden="true" />
     <span>Резюме на hh.ru</span>
   </a>
-</nav>
+</div>
 
 <style>
   .contact-dropdown {

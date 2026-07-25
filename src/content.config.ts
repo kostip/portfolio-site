@@ -20,7 +20,7 @@ const projects = defineCollection({
     cardDescription: z.string().optional(),
     tags: z.array(z.string()).optional(),
     accent: z.string().optional(),
-    featured: z.boolean().default(false),
+    draft: z.boolean().default(true),
     order: z.number().int().positive().optional(),
   }),
 });

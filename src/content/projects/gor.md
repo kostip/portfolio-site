@@ -16,7 +16,7 @@ tags:
   - Интерактивная карта
   - 4 роли
 accent: "#24c285"
-featured: true
+draft: false
 order: 1
 ---
 

@@ -16,7 +16,7 @@ tags:
   - "Личный кабинет"
   - "Design system"
 accent: "#8940CF"
-featured: true
+draft: false
 order: 5
 ---
 **Я спроектировал сайт-каталог для EdTech-школы саморазвития «AmeliSoul».**

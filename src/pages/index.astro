@@ -1,12 +1,10 @@
 ---
-import { getCollection } from 'astro:content';
 import ProjectCard from '../components/ProjectCard.astro';
 import UiButton from '../components/UiButton.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPublishedProjects } from '../utils/projects';
 
-const projects = (await getCollection('projects'))
-  .filter((project) => project.data.order !== undefined)
-  .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
+const projects = await getPublishedProjects();
 
 const resumeUrl = 'https://novosibirsk.hh.ru/resume/2dada270ff06c0c99b0039ed1f474e644b6e41';
 const contacts = [

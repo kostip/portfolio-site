@@ -1,18 +1,13 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { render } from 'astro:content';
 import ProjectLayout from '../../../layouts/ProjectLayout.astro';
+import { getPublishedProjects } from '../../../utils/projects';
 
 export async function getStaticPaths() {
-  const projects = await getCollection('projects');
-  const projectSequence = projects
-    .filter((project) => project.data.order !== undefined)
-    .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
+  const projects = await getPublishedProjects();
 
-  return projects.map((project) => {
-    const currentIndex = projectSequence.findIndex((item) => item.id === project.id);
-    const nextProject = currentIndex >= 0
-      ? projectSequence[(currentIndex + 1) % projectSequence.length]
-      : projectSequence[0];
+  return projects.map((project, index) => {
+    const nextProject = projects[(index + 1) % projects.length] ?? project;
 
     return {
       params: { slug: project.id },

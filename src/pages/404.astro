@@ -6,7 +6,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <BaseLayout
   title="Страница не найдена — Константин Вершигора"
   description="Запрошенная страница не найдена."
-  robots="noindex, follow"
+  noindex
+  disableCanonical
+  disableSocialMeta
   bodyClass="error-page-body"
   headerAutoHide={false}
 >

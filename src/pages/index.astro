@@ -7,6 +7,22 @@ import { getPublishedProjects } from '../utils/projects';
 
 const projects = await getPublishedProjects();
 
+const personStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Константин Вершигора',
+  jobTitle: 'Product и UX/UI дизайнер',
+  address: {
+    '@type': 'PostalAddress',
+    addressCountry: 'RU',
+  },
+  email: contactDetails.emailUrl,
+  sameAs: [
+    contactDetails.telegramUrl,
+    contactDetails.hhResumeUrl,
+  ],
+};
+
 const contacts = [
   {
     label: 'Telegram',
@@ -36,8 +52,12 @@ const contacts = [
 ---
 
 <BaseLayout
-  title="Константин Вершигора — Product и UX/UI Designer"
-  description="Product и UX/UI дизайнер с опытом проектирования B2B- и SaaS-продуктов, сложных интерфейсов и пользовательских сценариев."
+  title="Константин Вершигора — Product и UX/UI дизайнер"
+  description="Портфолио Product и UX/UI дизайнера Константина Вершигора. Проектирование B2B- и SaaS-продуктов, веб-сервисов и сложных пользовательских интерфейсов."
+  socialImage="/images/common/avatar.webp"
+  socialImageAlt="Константин Вершигора"
+  ogType="website"
+  structuredData={personStructuredData}
 >
   <main class="home-page">
     <section class="hero" aria-labelledby="hero-title">
@@ -46,6 +66,7 @@ const contacts = [
           <div class="hero__copy">
             <h1 id="hero-title">
               <span class="hero__title-primary">Product — UX/UI Designer</span>
+              {' '}
               <span class="hero__title-secondary">Проектирую B2B и SaaS со сложными сценариями</span>
             </h1>
             <p>

@@ -1,6 +1,8 @@
 ---
 title: "«AmeliSoul» – EdTech онлайн-школа саморазвития"
 description: "Я спроектировал сайт-каталог для EdTech-школы саморазвития «AmeliSoul»."
+seoTitle: "AmeliSoul — UX/UI сайта EdTech-школы — Константин Вершигора"
+seoDescription: "UX/UI-кейс сайта-каталога EdTech-школы AmeliSoul: навигация по темам, каталог и страницы курсов, календарь событий и концепция личного кабинета."
 role: "UX/UI"
 duration: "2 месяца"
 team: "Эксперт по масштабированию, маркетолог и Product Owner"

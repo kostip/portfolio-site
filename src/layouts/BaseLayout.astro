@@ -8,8 +8,14 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  socialImage?: string;
+  socialImageAlt?: string;
+  ogType?: 'website' | 'article';
+  noindex?: boolean;
+  disableCanonical?: boolean;
+  disableSocialMeta?: boolean;
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
   favicon?: string;
-  robots?: string;
   bodyClass?: string;
   headerAutoHide?: boolean;
 }
@@ -17,11 +23,27 @@ interface Props {
 const {
   title,
   description = 'Портфолио продуктового дизайнера Константина Вершигоры.',
+  socialImage,
+  socialImageAlt,
+  ogType = 'website',
+  noindex = false,
+  disableCanonical = false,
+  disableSocialMeta = false,
+  structuredData,
   favicon,
-  robots,
   bodyClass,
   headerAutoHide = true,
 } = Astro.props;
+
+const canonicalUrl = !disableCanonical && Astro.site
+  ? new URL(Astro.url.pathname, Astro.site)
+  : undefined;
+const socialImageUrl = socialImage && Astro.site
+  ? new URL(socialImage, Astro.site)
+  : undefined;
+const serializedStructuredData = structuredData
+  ? JSON.stringify(structuredData).replace(/</g, '\\u003c')
+  : undefined;
 
 const faviconTypes: Record<string, string> = {
   ico: 'image/x-icon',
@@ -48,7 +70,33 @@ const projectFavicon = faviconPath && faviconType && localFaviconExists
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    {robots && <meta name="robots" content={robots} />}
+    <meta name="author" content="Константин Вершигора" />
+    <meta name="theme-color" content="#ffffff" />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    {
+      !disableSocialMeta && (
+        <>
+          <meta property="og:title" content={title} />
+          <meta property="og:description" content={description} />
+          <meta property="og:type" content={ogType} />
+          <meta property="og:site_name" content="Константин Вершигора" />
+          <meta property="og:locale" content="ru_RU" />
+          {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+          {socialImageUrl && <meta property="og:image" content={socialImageUrl} />}
+          {socialImageUrl && socialImageAlt && (
+            <meta property="og:image:alt" content={socialImageAlt} />
+          )}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={title} />
+          <meta name="twitter:description" content={description} />
+          {socialImageUrl && <meta name="twitter:image" content={socialImageUrl} />}
+          {socialImageUrl && socialImageAlt && (
+            <meta name="twitter:image:alt" content={socialImageAlt} />
+          )}
+        </>
+      )
+    }
     {
       projectFavicon ? (
         <link rel="icon" type={projectFavicon.type} href={projectFavicon.href} />
@@ -61,6 +109,9 @@ const projectFavicon = faviconPath && faviconType && localFaviconExists
     }
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>{title}</title>
+    {serializedStructuredData && (
+      <script type="application/ld+json" set:html={serializedStructuredData} />
+    )}
   </head>
   <body class={bodyClass}>
     <a class="skip-link" href="#main-content">Перейти к содержимому</a>

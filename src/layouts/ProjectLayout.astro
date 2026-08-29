@@ -42,8 +42,11 @@ const titleIconDimensions = titleIconIsImage && project.data.titleIcon?.startsWi
 ---
 
 <BaseLayout
-  title={`${project.data.title} — Константин Вершигора`}
-  description={project.data.description}
+  title={project.data.seoTitle ?? project.data.title}
+  description={project.data.seoDescription ?? project.data.description}
+  socialImage={project.data.cover}
+  socialImageAlt={project.data.coverAlt}
+  ogType="article"
   favicon={projectFavicon}
 >
   <main class="project-page">

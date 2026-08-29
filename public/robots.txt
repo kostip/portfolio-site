@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://versh-konstantin.ru/sitemap-index.xml
